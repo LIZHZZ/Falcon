@@ -11,6 +11,7 @@
 #include <filesystem>
 
 // nvcomp bitcomp 头文件
+#include "nvcomp/bitcomp.h"  // C API for constants
 #include "nvcomp/bitcomp.hpp"
 #include "nvcomp.hpp"
 #include "data/dataset_utils.hpp"
@@ -264,8 +265,8 @@ void comp_Bitcomp(std::vector<double> oriData,CompressionInfo &a) {
     double decompression_total_time = std::chrono::duration<double, std::milli>(end_total_decompress - start_total_decompress).count();
     // std::cout << "=== 压缩结果 ===" << std::endl;
     // std::cout << "压缩后总大小: " << total_compressed_bytes << " bytes" << std::endl;
-    double compression_total_throughput_gbps = (data_size / 1e9) / (compression_total_time / 1000.0);
-    double decompression_total_throughput_gbps = (data_size / 1e9) / (decompression_total_time / 1000.0);
+    double compression_total_throughput_gbps = (data_size / (1024.0 * 1024.0 * 1024.0)) / (compression_total_time / 1000.0);
+    double decompression_total_throughput_gbps = (data_size / (1024.0 * 1024.0 * 1024.0)) / (decompression_total_time / 1000.0);
     a= CompressionInfo {
         data_size/1024.0/1024.0,
         total_compressed_bytes/1024.0/1024.0,

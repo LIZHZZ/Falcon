@@ -109,7 +109,7 @@ CompressionInfo run_patas_once(const std::vector<double>& oriData) {
     
     info.original_size_mb = original_size_mb;
     info.compressed_size_mb = compressed_size_mb;
-    info.compression_ratio = (double)original_size / (double)total_compressed_size;
+    info.compression_ratio = (double)total_compressed_size / (double)original_size;  // 与其他方法一致：compressed/original
     info.comp_kernel_time = 0.0;  // CPU版本无kernel时间
     info.comp_time = comp_time_ms;
     info.comp_throughput = original_size_mb / 1024.0 / (comp_time_ms / 1000.0);  // GB/s

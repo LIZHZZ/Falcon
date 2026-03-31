@@ -5,12 +5,34 @@
 #include <iostream>
 #include <cassert>
 #include <cuda_runtime.h>
+#if __has_include(<nvcomp_12/nvcomp/gdeflate.hpp>)
+#include <nvcomp_12/nvcomp/gdeflate.hpp>
+#elif __has_include(<nvcomp_11/nvcomp/gdeflate.hpp>)
+#include <nvcomp_11/nvcomp/gdeflate.hpp>
+#else
 #include <nvcomp/gdeflate.hpp>
+#endif
+#include <type_traits>
 #include "data/dataset_utils.hpp"
 #include <filesystem>
 namespace fs = std::filesystem;
 
 #define avg_times 3 
+
+template <typename ManagerType>
+ManagerType create_gdeflate_manager(
+    size_t chunk_size,
+    nvcompBatchedGdeflateOpts_t format_opts,
+    cudaStream_t stream)
+{
+    if constexpr (std::is_constructible_v<ManagerType, size_t, const nvcompBatchedGdeflateOpts_t&, cudaStream_t>) {
+        return ManagerType{chunk_size, format_opts, stream};
+    } else if constexpr (std::is_constructible_v<ManagerType, size_t, nvcompBatchedGdeflateOpts_t, cudaStream_t>) {
+        return ManagerType{chunk_size, format_opts, stream};
+    } else {
+        return ManagerType{chunk_size, static_cast<int>(format_opts.algo), stream};
+    }
+}
 
 CompressionInfo test_compression(const std::string& file_path) {
     // 读取数据
@@ -43,7 +65,7 @@ CompressionInfo test_compression(const std::string& file_path) {
     // 创建 GDeflate 管理器
     const size_t chunk_size = 65536;
     nvcompBatchedGdeflateOpts_t format_opts = {0};
-    nvcomp::GdeflateManager manager{chunk_size, format_opts, stream};
+    auto manager = create_gdeflate_manager<nvcomp::GdeflateManager>(chunk_size, format_opts, stream);
 
     // 配置压缩
     nvcomp::CompressionConfig comp_config = manager.configure_compression(in_bytes);
@@ -272,7 +294,7 @@ CompressionInfo test_beta_compression(const std::string& file_path,int beta) {
     // 创建 GDeflate 管理器
     const size_t chunk_size = 65536;
     nvcompBatchedGdeflateOpts_t format_opts = {0};
-    nvcomp::GdeflateManager manager{chunk_size, format_opts, stream};
+    auto manager = create_gdeflate_manager<nvcomp::GdeflateManager>(chunk_size, format_opts, stream);
 
     // 配置压缩
     nvcomp::CompressionConfig comp_config = manager.configure_compression(in_bytes);

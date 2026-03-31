@@ -16,7 +16,7 @@ namespace fs = std::filesystem;
 
 std::string title = "";
 int NUM_STREAM=16; // 使用16个CUDA Stream实现流水线
-#define NUM_STREAMS 16 // 使用16个CUDA Stream实现流水线
+// #define NUM_STREAMS 16 // 使用16个CUDA Stream实现流水线
 // 生成随机数据的函数
 std::vector<double> generate_test_data(size_t nbEle, int pattern_type = 0) {
     std::vector<double> data(nbEle);
@@ -113,12 +113,12 @@ ProcessedData prepare_data(const std::string &source_path = "", size_t generate_
 CompressionInfo test_streams_compression(ProcessedData data, size_t chunkSize)
 {
 
-    FalconPipeline ex;
+    FalconPipeline ex(NUM_STREAM);
 
-    CompressionResult compResult = ex.executeCompressionPipeline(data, chunkSize, NUM_STREAM);
+    CompressionResult compResult = ex.executeCompressionPipeline(data, chunkSize);
     cudaDeviceSynchronize(); 
 
-    PipelineAnalysis decompAnalysis = ex.executeDecompressionPipeline(compResult, data, NUM_STREAM);
+    PipelineAnalysis decompAnalysis = ex.executeDecompressionPipeline(compResult, data);
     cudaDeviceSynchronize(); 
 
 
@@ -163,7 +163,7 @@ CompressionInfo test_compression(ProcessedData data, size_t chunkSize)
 int test_multiple_blocksizes(const std::string &file_path, const std::vector<size_t> &block_sizes_kb)
 {
     printf("=================================================\n");
-    printf("=====Testing Block Sizes : %d muti streams ======\n", NUM_STREAMS);
+    printf("=====Testing Block Sizes : %d muti streams ======\n", NUM_STREAM);
     printf("=================================================\n");
 
     // 对每个块大小进行测试
@@ -305,14 +305,14 @@ void warmup()
 int setChunk(int nbEle)
 {
     size_t chunkSize=1025;
-    size_t temp=nbEle/NUM_STREAMS;// (data+temp-1)/temp<NUm_streams
+    size_t temp=nbEle/NUM_STREAM;// (data+temp-1)/temp<NUm_stream
     //可用的显存
     // size_t availableMemory = getAvailableGPUMemory();
     size_t availableMemory, totalMem;
     cudaMemGetInfo(&availableMemory, &totalMem);
-    // size_t limit=availableMemory/(4 * NUM_STREAMS * sizeof(double) * 2);
-    size_t limit=64*1024*1024/sizeof(double);
-    //最多同时有16流 chunkSize*NUM_STREAMS*8*sizeof(double) * 2<availableMemory/8*
+    // size_t limit=availableMemory/(4 * NUM_STREAM * sizeof(double) * 2);
+    size_t limit=64*1025*1024/sizeof(double);
+    //最多同时有16流 chunkSize*NUM_STREAM*8*sizeof(double) * 2<availableMemory/8*
     while(chunkSize<=limit//MAX_NUMS_PER_CHUNK l
             && chunkSize<=temp)
     {
@@ -437,12 +437,12 @@ int main(int argc, char *argv[]) {
     else if(arg == "--file-beta" && argc >= 3){
         std::string file_path = argv[2];
         warmup();
-        for(int beta=16;beta<18;beta++)
+        for(int beta=4;beta<18;beta++)
         {
             std::cout << "\n正在处理文件: " << file_path << " beta :" << beta << std::endl;
             
             CompressionInfo a;
-            for(int i = 0; i < 3; i++) {
+            for(int i = 0; i < 1; i++) {
                 // 每次循环重置GPU并重新准备数据
                 cudaDeviceReset();
                 
@@ -461,7 +461,7 @@ int main(int argc, char *argv[]) {
                 // 清理本次迭代的资源
                 cleanup_data(data);
             }
-            a=a/3;
+            // a=a/3;
             a.print();
             std::cout << "---------------------------------------------" << std::endl;
 

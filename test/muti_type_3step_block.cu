@@ -15,8 +15,9 @@
 namespace fs = std::filesystem;
 
 std::string title = "";
-#define NUM_STREAMS 16 // 使用16个CUDA Stream实现流水线
+int NUM_STREAM = 16; // 默认使用16个CUDA Stream实现流水线
 CompressionInfo test_compression(ProcessedData data, size_t chunkSize);
+CompressionInfo test_streams_compression(ProcessedData data, size_t chunkSize);
 // 生成随机数据的函数
 std::vector<double> generate_test_data(size_t nbEle, int pattern_type = 0) {
     std::vector<double> data(nbEle);
@@ -112,7 +113,7 @@ ProcessedData prepare_data(const std::string &source_path = "", size_t generate_
 CompressionInfo test_compression(ProcessedData data, size_t chunkSize)
 {
 
-    FalconPipeline ex(NUM_STREAMS);
+    FalconPipeline ex(NUM_STREAM);
 
     CompressionResult compResult = ex.executeCompressionPipelineBlock(data, chunkSize);
     cudaDeviceSynchronize(); 
@@ -152,12 +153,13 @@ void warmup()
 int setChunk(int nbEle)
 {
     size_t chunkSize=1025;
-    size_t temp=nbEle/NUM_STREAMS;// (data+temp-1)/temp<NUm_streams
+    size_t temp=nbEle/NUM_STREAM;// (data+temp-1)/temp<NUm_streams
     //可用的显存
     // size_t availableMemory = getAvailableGPUMemory();
     size_t availableMemory, totalMem;
     cudaMemGetInfo(&availableMemory, &totalMem);
-    size_t limit=availableMemory/(4 * NUM_STREAMS * sizeof(double) * 2);
+    // size_t limit=availableMemory/(4 * NUM_STREAM * sizeof(double) * 2);
+    size_t limit=64*1025*1024/sizeof(double);
     //最多同时有16流 chunkSize*NUM_STREAMS*8*sizeof(double) * 2<availableMemory/8*
     while(chunkSize<=limit//MAX_NUMS_PER_CHUNK 
             && chunkSize<=temp)
@@ -279,6 +281,49 @@ int main(int argc, char *argv[]) {
                 std::cout << "正在处理文件: " << file_path << std::endl;
                 test(file_path);
                 std::cout << "---------------------------------------------" << std::endl;
+            }
+        }
+    } else if (arg == "--analyze-streams-dir" && argc >= 3) {
+        std::string dir_path = argv[2];
+
+        // 检查目录是否存在
+        if (!fs::exists(dir_path)) {
+            std::cerr << "指定的数据目录不存在: " << dir_path << std::endl;
+            return 1;
+        }
+
+        int streams[5] = {1, 4, 8, 16, 32};
+
+        for (const auto &entry: fs::directory_iterator(dir_path)) {
+            if (entry.is_regular_file()) {
+                std::string file_path = entry.path().string();
+                std::cout << "正在处理文件: " << file_path << std::endl;
+                for (int i = 0; i < 5; i++) {
+                    NUM_STREAM = streams[i];
+                    printf("=================================================\n");
+                    printf("=====Testing Stream : %d muti streams ======\n", NUM_STREAM);
+                    printf("=================================================\n");
+                    CompressionInfo a;
+                    for (int j = 0; j < 3; j++) {
+                        // 每次循环重置GPU并重新准备数据
+                        cudaDeviceReset();
+
+                        // 重新准备CUDA资源
+                        ProcessedData data = prepare_data(file_path);
+
+                        // 计算chunk大小
+                        size_t chunkSize = setChunk(data.nbEle);
+
+                        // 执行测试
+                        auto tmp = test_compression(data, chunkSize);
+                        a += tmp;
+
+                        cleanup_data(data);
+                    }
+                    a = a / 3;
+                    a.print();
+                    std::cout << "---------------------------------------------" << std::endl;
+                }
             }
         }
     // } else if (arg == "--generate" && argc >= 3) {

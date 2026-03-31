@@ -1,12 +1,28 @@
 cmake_minimum_required(VERSION 3.11)
 
+# 设置策略以允许使用旧的FindCUDA模块
+if(POLICY CMP0146)
+    cmake_policy(SET CMP0146 OLD)
+endif()
+
+# 在project()之前设置CUDA标志，确保CMake确定CUDA编译器ID时能使用
+# 这修复了cmath找不到的问题
+set(CMAKE_CUDA_FLAGS_INIT "-I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11 -std=c++17 -Xcompiler=-std=c++17")
+
 project(CompressionTests CUDA CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CUDA_STANDARD 17)
+set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
 # 设置 CUDA 标志
 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -Wno-deprecated-gpu-targets")
 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --expt-relaxed-constexpr --expt-extended-lambda")
+set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -std=c++17 -Xcompiler=-std=c++17")
+
+# 确保CUDA编译器能找到C++标准库（修复cmath找不到的问题）
+set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -I/usr/include/c++/11")
+set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -I/usr/include/x86_64-linux-gnu/c++/11")
 
 # 查找 nvcomp
 find_package(nvcomp CONFIG PATHS 
@@ -19,11 +35,13 @@ if(nvcomp_FOUND)
     message(STATUS "Found nvcomp using CMake config")
     set(NVCOMP_LIBRARIES nvcomp::nvcomp)
     set(NVCOMP_INCLUDE_DIRS "")  # 由目标自己处理
+    # get_target_property(NVCOMP_INCLUDE_DIRS nvcomp::nvcomp INTERFACE_INCLUDE_DIRECTORIES)
+else()
+    set(NVCOMP_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/test/baseline/nvcomp/include)
 endif()
 
 # 添加子项目
 add_subdirectory(baseline/ALP)
-add_subdirectory(baseline/ALP_g)
 add_subdirectory(baseline/ndzip)
 add_subdirectory(baseline/elf)
 add_subdirectory(baseline/elf_star)
@@ -110,7 +128,6 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/test/baseline/elf
     ${CMAKE_SOURCE_DIR}/test/baseline/elf_star
     ${CMAKE_SOURCE_DIR}/test/baseline/elf_star_g
-    ${CMAKE_SOURCE_DIR}/test/baseline/ALP_g/include
     ${CMAKE_SOURCE_DIR}/test/baseline/ALP-G/src
 )
 
@@ -334,19 +351,6 @@ target_link_libraries(test_elf_star PRIVATE
     elf_star
 )
 
-# ALP GPU测试
-cuda_add_executable(test_ALP_g 
-    test_ALP_g.cu
-)
-target_link_libraries(test_ALP_g 
-    dataset_utils_lib
-    ${CUDA_LIBRARIES} 
-    GTest::GTest 
-    GTest::Main 
-    pthread 
-    alp_gpu
-    ALP
-)
 
 # ELF Star GPU测试
 cuda_add_executable(test_elf_star_g 
@@ -439,18 +443,18 @@ target_link_libraries(test_float_ALP PRIVATE
     ALP
 )
 
-cuda_add_executable(test_float_ALP_g
-    test_float_ALP_g.cu
-)
-target_link_libraries(test_float_ALP_g
-    ${CUDA_LIBRARIES} 
-    dataset_utils_lib
-    GTest::GTest 
-    GTest::Main 
-    pthread 
-    alp_gpu
-    ALP
-)
+# cuda_add_executable(test_float_ALP_GPU_v2 
+#     test_float_ALP_GPU_v2.cu
+# )
+# target_link_libraries(test_float_ALP_GPU_v2 
+#     alpg_lib
+#     alpg_headers
+#     dataset_utils_lib
+#     ${CUDA_LIBRARIES}
+#     GTest::GTest 
+#     GTest::Main 
+#     pthread
+# )
 
 cuda_add_executable(test_float_ALP_GPU 
     test_float_ALP_GPU.cu
@@ -495,6 +499,11 @@ target_link_libraries(test_float_Lz4
         GTest::Main
         pthread
     )
+if(NVCOMP_INCLUDE_DIRS)
+    target_include_directories(test_float_Lz4 BEFORE PRIVATE 
+        ${NVCOMP_INCLUDE_DIRS}
+    )
+endif()
 
 add_executable(test_float_elf
 test_float_elf.cpp
@@ -534,6 +543,7 @@ target_link_libraries(test_float_elf_star_g
 )
 
 # gdeflate测试
+    # 暂时禁用(API兼容性问题)
     cuda_add_executable(test_float_gdeflate 
         test_float_gdeflate.cu
     )
@@ -545,9 +555,11 @@ target_link_libraries(test_float_elf_star_g
         GTest::Main
         pthread
     )
-    target_include_directories(test_float_gdeflate PRIVATE 
-        ${CMAKE_SOURCE_DIR}/test/baseline/nvcomp/include
-    )
+    if(NVCOMP_INCLUDE_DIRS)
+        target_include_directories(test_float_gdeflate BEFORE PRIVATE 
+            ${NVCOMP_INCLUDE_DIRS}
+        )
+    endif()
 
     
 
@@ -563,9 +575,11 @@ target_link_libraries(test_float_elf_star_g
         GTest::Main
         pthread
     )
-    target_include_directories(test_float_Snappy PRIVATE 
-        ${CMAKE_SOURCE_DIR}/test/baseline/nvcomp/include
-    )
+    if(NVCOMP_INCLUDE_DIRS)
+        target_include_directories(test_float_Snappy BEFORE PRIVATE 
+            ${NVCOMP_INCLUDE_DIRS}
+        )
+    endif()
 
     cuda_add_executable(test_float_ndzip 
     test_float_ndzip.cpp
@@ -598,9 +612,11 @@ target_include_directories(test_float_ndzip PRIVATE
         GTest::Main
         pthread
     )
-    target_include_directories(test_float_bitcomp PRIVATE 
-        ${CMAKE_SOURCE_DIR}/test/baseline/nvcomp/include
-    )
+    if(NVCOMP_INCLUDE_DIRS)
+        target_include_directories(test_float_bitcomp BEFORE PRIVATE 
+            ${NVCOMP_INCLUDE_DIRS}
+        )
+    endif()
 
 # ==================== nvcomp相关测试（如果找到） ====================
 if(nvcomp_FOUND)
@@ -616,11 +632,13 @@ if(nvcomp_FOUND)
         GTest::Main
         pthread
     )
-    target_include_directories(test_LZ4 PRIVATE 
-        ${CMAKE_SOURCE_DIR}/test/baseline/nvcomp/include
-    )
+    if(NVCOMP_INCLUDE_DIRS)
+        target_include_directories(test_LZ4 BEFORE PRIVATE 
+            ${NVCOMP_INCLUDE_DIRS}
+        )
+    endif()
 
-    # gdeflate测试
+    # gdeflate测试 - 暂时禁用(API兼容性问题)
     cuda_add_executable(test_gdeflate 
         test_gdeflate.cu
     )
@@ -632,9 +650,11 @@ if(nvcomp_FOUND)
         GTest::Main
         pthread
     )
-    target_include_directories(test_gdeflate PRIVATE 
-        ${CMAKE_SOURCE_DIR}/test/baseline/nvcomp/include
-    )
+    if(NVCOMP_INCLUDE_DIRS)
+        target_include_directories(test_gdeflate BEFORE PRIVATE 
+            ${NVCOMP_INCLUDE_DIRS}
+        )
+    endif()
 
     # Snappy测试
     add_executable(test_Snappy 
@@ -648,9 +668,11 @@ if(nvcomp_FOUND)
         GTest::Main
         pthread
     )
-    target_include_directories(test_Snappy PRIVATE 
-        ${CMAKE_SOURCE_DIR}/test/baseline/nvcomp/include
-    )
+    if(NVCOMP_INCLUDE_DIRS)
+        target_include_directories(test_Snappy BEFORE PRIVATE 
+            ${NVCOMP_INCLUDE_DIRS}
+        )
+    endif()
 
     # bitcomp测试
     cuda_add_executable(test_bitcomp 
@@ -664,9 +686,11 @@ if(nvcomp_FOUND)
         GTest::Main
         pthread
     )
-    target_include_directories(test_bitcomp PRIVATE 
-        ${CMAKE_SOURCE_DIR}/test/baseline/nvcomp/include
-    )
+    if(NVCOMP_INCLUDE_DIRS)
+        target_include_directories(test_bitcomp BEFORE PRIVATE 
+            ${NVCOMP_INCLUDE_DIRS}
+        )
+    endif()
 endif()
 
 # ==================== 设置输出目录（避免冲突） ====================
@@ -674,7 +698,7 @@ set_target_properties(
     test_gpu test_gpu_nopack test_gpu_spare test_gpu_br 
     # test_gpu_string
     test_muti_stream test_muti_3step_block test_muti_3step_noblock
-    test_ALP test_ALP_g test_ndzip test_elf test_elf_star test_elf_star_g
+    test_ALP test_ndzip test_elf test_elf_star test_elf_star_g
     PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test"
 )

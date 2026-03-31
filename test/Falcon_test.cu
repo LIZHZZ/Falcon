@@ -398,7 +398,7 @@ int main(int argc, char *argv[]) {
     if (arg == "--file" && argc >= 3) {
         std::string file_path = argv[2];
         test(file_path);
-    } else if (arg == "--dir" && argc >= 3) {
+    } else if (arg == "--old-dir" && argc >= 3) {
         std::string dir_path = argv[2];
 
         // 检查目录是否存在
@@ -416,7 +416,7 @@ int main(int argc, char *argv[]) {
             }
         }
     }
-    else if (arg == "--core-dir" && argc >= 3) {
+    else if (arg == "--dir" && argc >= 3) {//会统计核函数时间
         std::string dir_path = argv[2];
         // 检查目录是否存在
         if (!fs::exists(dir_path)) {

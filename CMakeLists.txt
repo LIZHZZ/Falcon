@@ -1,5 +1,14 @@
 cmake_minimum_required(VERSION 3.10)
 
+# 设置策略以允许使用旧的FindCUDA模块（如果需要）
+if(POLICY CMP0146)
+    cmake_policy(SET CMP0146 OLD)
+endif()
+
+# 在project()之前设置CUDA标志，确保CMake确定CUDA编译器ID时能使用
+# 这修复了cmath找不到的问题
+set(CMAKE_CUDA_FLAGS_INIT "-I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11 -std=c++17 -Xcompiler=-std=c++17")
+
 project(cuCompressor-all)
 
 # 设置 C++ 标准
@@ -11,11 +20,16 @@ set(CMAKE_BUILD_TYPE Debug)
 # CUDA 设置
 # 设置 CUDA 编译器使用 C++17 标准
 set(CMAKE_CUDA_STANDARD 17)
+set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+# 使用旧的FindCUDA模块（兼容性）
 find_package(CUDA REQUIRED)
-set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}; -O3)
-set(CMAKE_CUDA_ARCHITECTURES 75 )#89 86 90)
-#enable_language(CXX)
-#enable_language(CUDA)
+
+# 确保CUDA编译器能找到C++标准库（修复cmath找不到的问题）
+# 添加C++标准库包含路径
+set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -I/usr/include/c++/11")
+set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -I/usr/include/x86_64-linux-gnu/c++/11")
+set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -O3 -std=c++17 -Xcompiler=-std=c++17")
+set(CMAKE_CUDA_ARCHITECTURES 70) # 89 86 90
 # 包含目录
 include_directories(include)
 include_directories(src/utils)

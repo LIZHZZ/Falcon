@@ -184,20 +184,33 @@ __global__ void Falcon_compress_kernel(
     unsigned int thread_ofs = 0;
 
     int maxSp = -99;
-    // 1. 采样
-    for (int i = 0; i < numDatas; i++) {
-        double value =input[startIdx + i];
-        double log10v = log10(std::abs(value));
+    // 1. 采样（固定上限，方便编译器展开）
+    #pragma unroll 8
+    for (int i = 0; i < DATA_PER_THREAD; ++i) {
+        if (i >= numDatas) break;
+
+        double value = input[startIdx + i];
+        double log10v = log10(fabs(value));
         int sp = floor(log10v);
         maxSp = device_max(maxSp, sp);
-        double alpha = getDecimalPlaces(value, sp);// 得到小数位数
-        // double beta =  alpha + sp + 1;
-        // maxBeta = device_max(maxBeta,beta);
-        // if(alpha>maxDecimalPlaces){
-        //     idwrong = i;
-        // }
+
+        int alpha = getDecimalPlaces(value, sp);  // 得到小数位数
         maxDecimalPlaces = device_max(maxDecimalPlaces, alpha);
     }
+    // 1. 采样
+    // for (int i = 0; i < numDatas; i++) {
+    //     double value =input[startIdx + i];
+    //     double log10v = log10(std::abs(value));
+    //     int sp = floor(log10v);
+    //     maxSp = device_max(maxSp, sp);
+    //     double alpha = getDecimalPlaces(value, sp);// 得到小数位数
+    //     // double beta =  alpha + sp + 1;
+    //     // maxBeta = device_max(maxBeta,beta);
+    //     // if(alpha>maxDecimalPlaces){
+    //     //     idwrong = i;
+    //     // }
+    //     maxDecimalPlaces = device_max(maxDecimalPlaces, alpha);
+    // }
 
     maxBeta = maxSp + maxDecimalPlaces+1;
     
@@ -207,15 +220,26 @@ __global__ void Falcon_compress_kernel(
     prevQuant = firstValue;// 初始化第一个量化值
     base_block_start_idx = startIdx + 1;
 
-    for(int i=0;i<numDatas-1;i++){
-        currQuant = double2long(input[base_block_start_idx+i], maxDecimalPlaces,maxBeta); // 量化当前数据点
-        lorenQuant = currQuant - prevQuant; // 计算差分
+    #pragma unroll 8
+    for (int i = 0; i < DATA_PER_THREAD - 1; ++i) {
+        if (i >= numDatas - 1) break;
+
+        currQuant = double2long(input[base_block_start_idx + i], maxDecimalPlaces, maxBeta); // 量化当前数据点
+        lorenQuant = currQuant - prevQuant;                                                  // 计算差分
         deltas[i] = zigzag_encode_cuda(lorenQuant);
-    
+
         maxDelta = device_max_uint64(maxDelta, deltas[i]);
         prevQuant = currQuant;
-
     }
+    // for(int i=0;i<numDatas-1;i++){
+    //     currQuant = double2long(input[base_block_start_idx+i], maxDecimalPlaces,maxBeta); // 量化当前数据点
+    //     lorenQuant = currQuant - prevQuant; // 计算差分
+    //     deltas[i] = zigzag_encode_cuda(lorenQuant);
+    
+    //     maxDelta = device_max_uint64(maxDelta, deltas[i]);
+    //     prevQuant = currQuant;
+
+    // }
 
     bitCount = maxDelta > 0 ? 64 - __clzll(maxDelta) : 1;//用内置函数 替代处理循环
     bitCount = min(bitCount, (int)MAX_BITCOUNT);
@@ -223,6 +247,36 @@ __global__ void Falcon_compress_kernel(
         const int numByte = (numDatas - 1 + 7) / 8;
         uint8_t result_flat[8192] = {};
 
+    // 对 bit-plane 行做适度展开
+    #pragma unroll 8
+    for (int i = 0; i < MAX_BITCOUNT; ++i) {  // MAX_BITCOUNT 是 bitCount 的上限
+        if (i >= bitCount) break;
+
+        int j = 0;
+        while ((j + 8 + 1) < numDatas) {
+            int byteIndex = j / 8;  // 当前bit属于第几个字节
+            uint8_t currentByte = 0;
+            currentByte |= (((deltas[j]     >> (bitCount - 1 - i)) & 1) << 7);
+            currentByte |= (((deltas[j + 1] >> (bitCount - 1 - i)) & 1) << 6);
+            currentByte |= (((deltas[j + 2] >> (bitCount - 1 - i)) & 1) << 5);
+            currentByte |= (((deltas[j + 3] >> (bitCount - 1 - i)) & 1) << 4);
+            currentByte |= (((deltas[j + 4] >> (bitCount - 1 - i)) & 1) << 3);
+            currentByte |= (((deltas[j + 5] >> (bitCount - 1 - i)) & 1) << 2);
+            currentByte |= (((deltas[j + 6] >> (bitCount - 1 - i)) & 1) << 1);
+            currentByte |= (((deltas[j + 7] >> (bitCount - 1 - i)) & 1) << 0);
+
+            result_flat[i * numByte + byteIndex] = currentByte;
+            j += 8;
+        }
+        for (; j < (numDatas - 1); ++j) {
+            int byteIndex = j / 8;  // 当前bit属于第几个字节
+            int bitIndex  = j % 8;  // 当前bit在字节中的位置
+
+            uint8_t bitVal = ((deltas[j] >> (bitCount - 1 - i)) & 1);
+            result_flat[i * numByte + byteIndex] |= bitVal << (7 - bitIndex);
+        }
+    }
+/*
         for (int i = 0; i < bitCount; ++i) {//行
             int j=0;
             while((j+8+1)<numDatas)
@@ -256,7 +310,7 @@ __global__ void Falcon_compress_kernel(
             }
 
         }
-
+*/
 
         // 4.2 设置稀疏列，并且进行标记，同时计算bitsize
         uint64_t bitSize =  64ULL +                 // bitsize
@@ -270,7 +324,7 @@ __global__ void Falcon_compress_kernel(
         uint8_t flag2[(DATA_PER_THREAD-1)];
 
         memset(flag2,0,sizeof(flag2));
-
+/*
         for(int i = 0;i<bitCount;i++){
             int b0 = 0;
             int b1 = 0;
@@ -301,8 +355,40 @@ __global__ void Falcon_compress_kernel(
                 flag1 &= ~((!is_sparse) << i);
                 bitSize += is_sparse ? ((numByte + 7) / 8 + b1) * 8 : 8 * numByte;
         }
+*/
+        #pragma unroll 8
+        for (int i = 0; i < MAX_BITCOUNT; ++i) {
+            if (i >= bitCount) break;
 
+            int b0 = 0;
+            int b1 = 0;
 
+            size_t result_row_start_offset = i * numByte;
+            size_t flag2_row_start_offset   = i * ((numByte + 7) / 8); // flag2 每一行的字节数
+
+            for (int j = 0; j < numByte; j++) {
+                uint8_t current_result_byte = result_flat[result_row_start_offset + j];
+
+                b0 += (current_result_byte == 0);
+                b1 += (current_result_byte != 0);
+
+                int flag2_byte_idx = j / 8;
+                int flag2_bit_idx  = j % 8;
+
+                if (current_result_byte != 0) {
+                    flag2[flag2_row_start_offset + flag2_byte_idx] |=  (1u << flag2_bit_idx);
+                } else {
+                    flag2[flag2_row_start_offset + flag2_byte_idx] &=
+                        static_cast<uint8_t>(~(1u << flag2_bit_idx));
+                }
+            }
+
+            uint64_t is_sparse = (uint64_t)(((numByte + 7) / 8 + b1) < numByte);
+            flag1 |= (is_sparse << i);
+            flag1 &= ~((!is_sparse) << i);
+            bitSize += is_sparse ? ((numByte + 7) / 8 + b1) * 8 : 8 * numByte;
+        }
+            
         if(numDatas<=0)
         {
             bitSize=0;

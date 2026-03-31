@@ -124,8 +124,8 @@ void test_mpc_compression() {
               << "\n压缩率: " << std::fixed << std::setprecision(2) << compression_ratio * 100 << "%"
               << "\n平均压缩时间: " << avg_compress_time * 1000 << " ms"
               << "\n平均解压时间: " << avg_decompress_time * 1000 << " ms"
-              << "\n压缩吞吐量: " << (input_bytes / 1e9) / avg_compress_time << " GB/s"
-              << "\n解压吞吐量: " << (input_bytes / 1e9) / avg_decompress_time << " GB/s"
+              << "\n压缩吞吐量: " << (input_bytes / (1024.0 * 1024.0 * 1024.0)) / avg_compress_time << " GB/s"
+              << "\n解压吞吐量: " << (input_bytes / (1024.0 * 1024.0 * 1024.0)) / avg_decompress_time << " GB/s"
               << "\nGPU内核时间: " << kernel_time << " μs\n";
 }
 
