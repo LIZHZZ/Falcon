@@ -1,6 +1,6 @@
 // Falcon_float_pipeline.cuh
-// 32位浮点数流水线压缩和解压缩类
-// 路径: Falcon\include\Falcon_float_pipeline.cuh
+// 32-bit floating-point pipeline compression and decompression class
+// Path: Falcon/include/Falcon_float_pipeline.cuh
 
 #pragma once
 
@@ -10,37 +10,37 @@
 #include "Falcon_float_compressor.cuh"
 #include "Falcon_float_decompressor.cuh"
 
-// 流水线性能分析结构体
+// Pipeline performance analysis structure
 struct PipelineAnalysis_32 {
-    float total_size = 0;           // 数据总大小(MB)
-    float compression_ratio = 0;    // 压缩率
-    float comp_time = 0;            // 压缩时间(ms)
-    float decomp_time = 0;          // 解压缩时间(ms)
-    float comp_throughout = 0;      // 压缩吞吐量(GB/s)
-    float decomp_throughout = 0;    // 解压缩吞吐量(GB/s)
-    float total_compressed_size = 0; // 压缩后总大小(MB)
-    size_t chunk_size = 0;          // 块大小
+    float total_size = 0;           // Total data size (MB)
+    float compression_ratio = 0;    // Compression ratio
+    float comp_time = 0;            // Compression time (ms)
+    float decomp_time = 0;          // Decompression time (ms)
+    float comp_throughout = 0;      // Compression throughput (GB/s)
+    float decomp_throughout = 0;    // Decompression throughput (GB/s)
+    float total_compressed_size = 0; // Total compressed size (MB)
+    size_t chunk_size = 0;          // Chunk size
 };
 
-// 压缩结果结构体
+// Compression result structure
 struct CompressionResult_32 {
     PipelineAnalysis_32 analysis;
-    std::vector<size_t> chunkSizes;        // 每个chunk的压缩大小(字节)
-    std::vector<size_t> chunkElementCounts; // 每个chunk的元素数量
-    size_t totalChunks;                    // 总chunk数量
+    std::vector<size_t> chunkSizes;        // Compressed size of each chunk (bytes)
+    std::vector<size_t> chunkElementCounts; // Number of elements in each chunk
+    size_t totalChunks;                    // Total number of chunks
 };
 
-// 压缩数据结构体
+// Compressed data structure
 struct CompressedData_32 {
-    unsigned char* cmpBytes;                // 压缩数据缓冲
-    size_t totalCompressedSize;             // 总压缩大小
-    size_t totalElements;                   // 原始数据元素总数
-    std::vector<size_t> chunkSizes;         // 每个chunk的压缩大小(字节)
-    std::vector<size_t> chunkElementCounts; // 每个chunk的元素数量
-    size_t totalChunks;                     // 总chunk数量
+    unsigned char* cmpBytes;                // Compressed data buffer
+    size_t totalCompressedSize;             // Total compressed size
+    size_t totalElements;                   // Total number of original elements
+    std::vector<size_t> chunkSizes;         // Compressed size of each chunk (bytes)
+    std::vector<size_t> chunkElementCounts; // Number of elements in each chunk
+    size_t totalChunks;                     // Total number of chunks
 };
 
-// 处理数据结构体
+// Processed data structure
 struct ProcessedData_32 {
     float *oriData;
     unsigned char *cmpBytes;
@@ -49,14 +49,14 @@ struct ProcessedData_32 {
     size_t nbEle;
 };
 
-// 流水线阶段枚举
+// Pipeline stage enum
 enum Stage_32 { 
-    IDLE_32,           // 空闲
-    SIZE_PENDING_32,   // 等待大小信息
-    DATA_PENDING_32    // 等待数据传输
+    IDLE_32,           // Idle
+    SIZE_PENDING_32,   // Waiting for size information
+    DATA_PENDING_32    // Waiting for data transfer
 };
 
-// 流水线压缩解压缩类
+// Pipeline compression and decompression class
 class FalconPipeline_32 {
 public:
     FalconPipeline_32() {
@@ -66,49 +66,49 @@ public:
     FalconPipeline_32(int numStreams) : NUM_STREAMS(numStreams) {}
     ~FalconPipeline_32();
 
-    // 执行压缩流水线
+    // Execute compression pipeline
     CompressionResult_32 executeCompressionPipeline(
         ProcessedData_32 &data, 
         size_t chunkSize);
 
-    // 执行压缩流水线(指定流数量)
+    // Execute compression pipeline with a specified number of streams
     CompressionResult_32 executeCompressionPipeline(
         ProcessedData_32 &data, 
         size_t chunkSize,
         int numStreams);
 
-    // 执行解压缩流水线
+    // Execute decompression pipeline
     PipelineAnalysis_32 executeDecompressionPipeline(
         const CompressionResult_32& compResult,
         ProcessedData_32 &decompData,
         bool visualize = true);
 
-    // 执行解压缩流水线(指定流数量)
+    // Execute decompression pipeline with a specified number of streams
     PipelineAnalysis_32 executeDecompressionPipeline(
         const CompressionResult_32& compResult,
         ProcessedData_32 &decompData,
         int numStreams,
         bool visualize = true);
 
-    // 辅助函数:从压缩结果创建CompressedData结构
+    // Helper: create a CompressedData structure from a CompressionResult
     static CompressedData_32 createCompressedData(
         const CompressionResult_32& compResult,
         const ProcessedData_32& originalData);
 
-    // 设置流数量
+    // Set the number of streams
     void setNumStreams(int numStreams) { 
         NUM_STREAMS = numStreams; 
     }
 
-    // 获取当前流数量
+    // Get the current number of streams
     int getNumStreams() const { 
         return NUM_STREAMS; 
     }
 
 private:
-    int NUM_STREAMS;  // CUDA流数量
+    int NUM_STREAMS;  // Number of CUDA streams
 
-    // 内部实现函数
+    // Internal implementation functions
     CompressionResult_32 executeCompressionPipelineImpl(
         ProcessedData_32 &data,
         size_t chunkSize,

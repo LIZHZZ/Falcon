@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 启用调试模式（可选，显示每条执行的命令）
+# Enable debug mode (optional, prints each executed command)
 set -x
 cd ..
 
@@ -8,11 +8,11 @@ cd ..
 mkdir -p build
 cd build || exit 1
 
-# 编译项目
+# Build the project
 cmake .. || { echo "CMake failed!"; exit 1; }
 make -j || { echo "Make failed!"; exit 1; }
 
-# 运行测试并同时输出到屏幕和日志文件
+# Run tests and output to both terminal and log files
 run_test() {
     local test_name=$1
     local log_file="../script/output_${test_name}.log"
@@ -21,7 +21,7 @@ run_test() {
     # ./test/test_${test_name} --dir ../test/data/wrong/ 2>&1 | tee "$log_file"
     ./test/test_${test_name} --dir ../test/data/use/ 2>&1 | tee "$log_file"
 }
-# 执行所有测试
+# Run all tests (enable the ones you need)
 
 # run_test "Falcon_cpu"
 # run_test "gpu"

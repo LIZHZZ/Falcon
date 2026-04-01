@@ -14,15 +14,15 @@
 #include <vector>
 #include <cstdint>
 
-// 解压缩类
+// Decompression class
 class FalconDecompressor {
 public:
     void Falcon_decompress(double* d_decData, unsigned char* d_cmpBytes, size_t nbEle, size_t cmpSize, cudaStream_t stream);
     void Falcon_decompress_stream_optimized(
-            double* d_decData,          // 解压输出缓冲
-            unsigned char* d_cmpBytes,  // 压缩输入缓冲（设备端）
-            size_t nbEle,               // 原始元素数量
-            size_t cmpSize,             // 压缩数据大小
+            double* d_decData,          // Decompression output buffer
+            unsigned char* d_cmpBytes,  // Compressed input buffer (device side)
+            size_t nbEle,               // Number of original elements
+            size_t cmpSize,             // Size of compressed data
             cudaStream_t stream) ;
     // void Falcon_decompress_ultra_optimized(
     //         double* d_decData,
@@ -32,21 +32,21 @@ public:
     //         cudaStream_t stream);
     void decompress(const std::vector<unsigned char>& compressedData, std::vector<double>& output,int numDatas);
     void Falcon_decompress_no_pack(
-        double* d_decData,          // 解压输出缓冲
-        unsigned char* d_cmpBytes,  // 压缩输入缓冲（设备端）
-        size_t nbEle,               // 原始元素数量
-        size_t cmpSize,             // 压缩数据大小
-        cudaStream_t stream         // CUDA流
+        double* d_decData,          // Decompression output buffer
+        unsigned char* d_cmpBytes,  // Compressed input buffer (device side)
+        size_t nbEle,               // Number of original elements
+        size_t cmpSize,             // Size of compressed data
+        cudaStream_t stream         // CUDA stream
     );
 };
 
 
-// 主机端 辅助类，用于按位读取压缩数据
+// Host-side helper class for reading compressed data bit by bit
 class BitReader {
 public:
     BitReader(const std::vector<unsigned char>& buffer) : buffer(buffer), bitPos(0) {}
 
-    // 读取 n 位并作为 uint64_t 返回
+    // Read n bits and return them as a uint64_t
     uint64_t readBits(int n) {
         uint64_t value = 0;
         for(int i = 0; i < n; ++i) {
@@ -71,12 +71,12 @@ public:
         }
         return value;
     }
-    // 跳过 n 位
+    // Skip n bits
     void advance(int n) {
         bitPos += n;
     }
 
-    // 获取当前位位置
+    // Get current bit position
     size_t getBitPos() const {
         return bitPos;
     }
@@ -88,15 +88,15 @@ private:
 
 class BitReader0 {
 public:
-    // 原有的vector构造函数 - 保持向后兼容
+    // Original vector constructor - kept for backward compatibility
     BitReader0(const std::vector<unsigned char>& buffer) : 
         bufferPtr(buffer.data()), bufferSize(buffer.size()), bitPos(0), ownsBuffer(false) {}
     
-    // 新增的指针构造函数 - 支持直接使用指针
+    // New pointer constructor - supports using raw pointers directly
     BitReader0(const unsigned char* buffer, size_t size) : 
         bufferPtr(buffer), bufferSize(size), bitPos(0), ownsBuffer(false) {}
 
-    // 读取 n 位并作为 uint64_t 返回
+    // Read n bits and return them as a uint64_t
     uint64_t readBits(int n) {
         uint64_t value = 0;
         for(int i = 0; i < n; ++i) {
@@ -110,7 +110,7 @@ public:
         return value;
     }
     
-    // 从指定位置读取 n 位
+    // Read n bits starting from the specified bit position
     uint64_t readBits(int begin, int n) {
         uint64_t value = 0;
         for(int i = 0; i < n; ++i) {
@@ -124,25 +124,25 @@ public:
         return value;
     }
     
-    // 跳过 n 位
+    // Skip n bits
     void advance(int n) {
         bitPos += n;
     }
 
-    // 获取当前位位置
+    // Get current bit position
     size_t getBitPos() const {
         return bitPos;
     }
     
-    // 获取缓冲区大小
+    // Get buffer size
     size_t getBufferSize() const {
         return bufferSize;
     }
 
 private:
-    const unsigned char* bufferPtr;  // 统一使用指针
-    size_t bufferSize;               // 缓冲区大小
-    size_t bitPos;                   // 当前位位置
-    bool ownsBuffer;                 // 是否拥有缓冲区（用于将来可能的内存管理）
+    const unsigned char* bufferPtr;  // Unified pointer-based buffer
+    size_t bufferSize;               // Buffer size
+    size_t bitPos;                   // Current bit position
+    bool ownsBuffer;                 // Whether this object owns the buffer (for potential future memory management)
 };
 

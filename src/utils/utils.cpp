@@ -5,19 +5,19 @@
 #include "utils.h"
 
 int count_significant_digits(double num) {
-  // 处理0的情况
+    // Handle the special case for 0
     if (num == 0.0) {
-        return 1; // 0只有一个有效位
+        return 1; // Zero has exactly one significant digit
     }
     int count = 0;
-    int started = 0; // 标记是否开始计数
+    int started = 0; // Marker indicating whether counting has started
 
-    // 处理负数
+    // Handle negative numbers
     if (num < 0) {
         num = -num;
     }
     
-    // 处理小数部分
+    // Handle fractional part
     while (num!=(int)num) {
         num *=10;
         count++;

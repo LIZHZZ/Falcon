@@ -5,12 +5,12 @@
 
 #include "array.h"
 
-//@输出bit流
-//  大端字节序
-//  data_：存储编码后的数据块
-//  cursor_: 当前写入位置的光标
-//  bit_in_buffer_: 当前缓冲区中已写入的位数
-//  buffer_: 临时缓冲区，用于逐位写入
+// Output bit stream
+//  Big-endian byte order
+//  data_: stores encoded data blocks
+//  cursor_: cursor of the current write position in data_
+//  bit_in_buffer_: number of bits currently stored in the buffer_
+//  buffer_: temporary buffer used for bit-wise writes
 class OutputBitStream {
  public:
     explicit OutputBitStream(uint32_t buffer_size);
@@ -35,10 +35,10 @@ class OutputBitStream {
     return cursor_;
    }
  private:
-    Array<uint32_t> data_;    // 存储编码后的数据块
-    uint32_t cursor_;         // data中当前写入位置的光标，
-    uint32_t bit_in_buffer_;  // 当前缓冲区中已写入的位数
-    uint64_t buffer_;         // 临时缓冲区，用于逐位写入
+    Array<uint32_t> data_;    // Encoded data blocks
+    uint32_t cursor_;         // Cursor of current write position in data_
+    uint32_t bit_in_buffer_;  // Number of bits currently stored in buffer_
+    uint64_t buffer_;         // Temporary buffer used for bit-wise writes
 };
 
 #endif  // SERF_OUTPUT_BIT_STREAM_H

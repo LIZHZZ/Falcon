@@ -12,10 +12,10 @@
 #include <algorithm>
 #include <cstring>
 #include <thrust/device_vector.h>
-// 压缩常量
-static const int cmp_tblock_size = 32; // 每个线程块包含32个常量 Fixed to 32, cannot be modified.
+// Compression constants
+static const int cmp_tblock_size = 32; // Each thread block contains 32 constants. Fixed to 32, cannot be modified.
 static const int dec_tblock_size = 32; // Fixed to 32, cannot be modified.
-static const int cmp_chunk = 1025;     // 每个线程块，包含1024个数据，一个线程处理1024/32个数据
+static const int cmp_chunk = 1025;     // Each thread block contains 1025 elements; one thread processes 1025/32 elements
 static const int dec_chunk = 1025;
 
 #define BLOCK_SIZE_G 32

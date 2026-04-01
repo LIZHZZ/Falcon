@@ -2,10 +2,10 @@
 // Created by lz on 24-9-26.
 //
 #include "Falcon_compressor.cuh"
-#include <iomanip> // 用于设置输出格式
-// 定义常量
+#include <iomanip> // For formatted debug output
+// Constant definitions
 
-// pow10_table 和 POW_NUM_G
+// pow10_table and POW_NUM_G
 __constant__ double pow10_table[17] = {
     1.0,                    // 10^0
     10.0,                   // 10^1
@@ -64,7 +64,7 @@ __device__ static int getDecimalPlaces_br(double v,int sp) {
     int i = 0;
     double scale = 1.0;
     
-    // 找到能精确表示为整数的最小倍数
+    // Find the smallest multiplier that turns v into an exact integer
     while (i < 17) {
         double temp = v * scale;
         
@@ -75,16 +75,16 @@ __device__ static int getDecimalPlaces_br(double v,int sp) {
         i++;
         scale *= 10.0;
     }
-    return 17; // 达到双精度极限
+    return 17; // Reached double-precision limit
 }
 
 
 
-// 辅助函数：打印缓冲区的指定范围，以十六进制格式显示
+// Helper: print a specified range of the buffer in hexadecimal
 __device__ void print_bytes(const unsigned char* buffer, size_t start, size_t length, const char* label) {
     printf("%s: ", label);
     for (size_t i = start; i < start + length; ++i) {
-        // 打印每个字节的十六进制表示
+        // Print each byte in hexadecimal form
         printf("%02x ", buffer[i]);
     }
     printf("\n");

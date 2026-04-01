@@ -13,7 +13,7 @@
 // #include <numeric>
 // #include <cassert>
 
-// // ALP-G 头文件
+// // ALP-G headers
 // #include "alp/alp-bindings.cuh"
 // #include "flsgpu/flsgpu-api.cuh"
 // #include "flsgpu/structs.cuh"
@@ -25,7 +25,7 @@
 
 // namespace fs = std::filesystem;
 
-// // 函数声明(保持与基础版文件一致命名,内部改为扩展格式)
+// // Function declaration (keep the same name as the basic version, internal extended format)
 // CompressionInfo comp_ALP_G(std::vector<double> oriData);
 // CompressionInfo test_compression(const std::string &file_path);
 // CompressionInfo test_beta_compression(const std::string &file_path, int beta);
@@ -66,20 +66,20 @@
 //     return true;
 // }
 
-// // ==================== 扩展版压缩 + GPU 解压 ====================
+// // ==================== Extended compression + GPU decompression ====================
 // CompressionInfo comp_ALP_G(std::vector<double> oriData)
 // {
 //     const size_t original_num_elements = oriData.size();
 //     const size_t original_size = original_num_elements * sizeof(double);
 //     if (original_num_elements == 0)
 //     {
-//         std::cerr << "❌ 输入数据为空" << std::endl;
+//         std::cerr << "❌ Input data is empty" << std::endl;
 //         return CompressionInfo{};
 //     }
 
-//     // 与基础版统一的参数
+//     // Parameters aligned with the basic version
 //     constexpr size_t VECTOR_SIZE = 1024;
-//     constexpr unsigned UNPACK_N_VECTORS = 1; // 安全配置
+//     constexpr unsigned UNPACK_N_VECTORS = 1; // Safe configuration
 //     constexpr size_t N_LANES_DOUBLE = 16;
 //     constexpr size_t THREADS_PER_WARP = 32;
 //     constexpr size_t N_WARPS_PER_BLOCK = 2;
@@ -91,8 +91,8 @@
 //     std::vector<double> paddedData;
 //     const double *data_ptr = oriData.data();
 
-//     // 1.数据预处理
-//     // 填充到线程块向量组的倍数
+//     // 1. Data preprocessing
+//     // Pad to multiples of the block vector group size
 //     size_t n_vecs = (num_elements + VECTOR_SIZE - 1) / VECTOR_SIZE;
 //     size_t n_vecs_padded = ((n_vecs + VECTORS_PER_BLOCK - 1) / VECTORS_PER_BLOCK) * VECTORS_PER_BLOCK;
 //     size_t num_elements_padded = n_vecs_padded * VECTOR_SIZE;
@@ -105,7 +105,7 @@
 //         paddedData.insert(paddedData.end(), pad_needed, oriData.back());
 //         data_ptr = paddedData.data();
 //     }
-//     // 2.压缩阶段
+//     // 2. Compression phase
 //     auto encode_start = std::chrono::high_resolution_clock::now();
 //     flsgpu::host::ALPColumn<double> host_base_column;
 //     try
@@ -114,29 +114,29 @@
 //     }
 //     catch (const std::exception &e)
 //     {
-//         std::cerr << "❌ 基础压缩失败: " << e.what() << std::endl;
+//         std::cerr << "❌ Base compression failed: " << e.what() << std::endl;
 //         return CompressionInfo{};
 //     }
-//     // 计时
+//     // Timing
 //     auto encode_end = std::chrono::high_resolution_clock::now();
 //     const double compression_time_ms = std::chrono::duration<double, std::milli>(encode_end - encode_start).count();
 //     constexpr double compression_kernel_time_ms = 0.0;
     
-//     // 判断使用扩展版 or 基础版
+//     // Decide whether to use extended or base format
 //     const bool use_extended = can_use_extended(host_base_column);
 //     const size_t compressed_size = use_extended ? host_base_column.compressed_size_bytes_alp_extended
 //                                                 : host_base_column.compressed_size_bytes_alp;
 //     const double compression_ratio = static_cast<double>(compressed_size) / original_size;
-//     std::cout << "✓ 压缩完成(" << (use_extended ? "扩展" : "基础") << "): "
-//               << compressed_size << " bytes, 比率=" << compression_ratio << "x" << std::endl;
+//     std::cout << "✓ Compression done (" << (use_extended ? "extended" : "base") << "): "
+//               << compressed_size << " bytes, ratio=" << compression_ratio << "x" << std::endl;
 
-//     // 创建 CUDA 事件用于计时
+//     // Create CUDA events for timing
 //     cudaEvent_t kernel_start{};
 //     cudaEvent_t kernel_stop{};
 //     cudaEventCreate(&kernel_start);
 //     cudaEventCreate(&kernel_stop);
 //     auto decomp_start = std::chrono::high_resolution_clock::now();
-//     // 解压过程
+//     // Decompression
 //     if (use_extended)
 //     {
 
@@ -151,7 +151,7 @@
 //         }
 //         catch (const std::exception &e)
 //         {
-//             std::cerr << "❌ 扩展列复制到 GPU 失败: " << e.what() << std::endl;
+//             std::cerr << "❌ Copy of extended column to GPU failed: " << e.what() << std::endl;
 //             flsgpu::host::free_column(host_extended_column);
 //             flsgpu::host::free_column(host_base_column);
 //             return CompressionInfo{};
@@ -176,12 +176,12 @@
 //             cudaEventElapsedTime(&kernel_elapsed_ms, kernel_start, kernel_stop);
 //             if (!host_decompressed_data)
 //             {
-//                 throw std::runtime_error("扩展GPU解压返回 nullptr");
+//                 throw std::runtime_error("Extended GPU decompression returned nullptr");
 //             }
 //         }
 //         catch (const std::exception &e)
 //         {
-//             std::cerr << "❌ 扩展GPU解压失败: " << e.what() << std::endl;
+//             std::cerr << "❌ Extended GPU decompression failed: " << e.what() << std::endl;
 //             if (host_decompressed_data)
 //                 delete[] host_decompressed_data;
 //             flsgpu::host::free_column(device_extended_column);
@@ -193,17 +193,17 @@
 //         }
 //         auto decomp_end = std::chrono::high_resolution_clock::now();
 
-//         // 时间统计
+//         // Timing statistics
 //         const double decompression_time_ms = std::chrono::duration<double, std::milli>(decomp_end - decomp_start).count();
 //         const double decompression_kernel_time_ms = static_cast<double>(kernel_elapsed_ms);
         
-//         // 验证解压数据
+//         // Verify decompressed data
 //         const uint8_t *padded_bytes = reinterpret_cast<const uint8_t *>(data_ptr);
 //         const uint8_t *decomp_bytes = reinterpret_cast<const uint8_t *>(host_decompressed_data);
 //         const size_t decomp_size = device_extended_column.n_values * sizeof(double);
 //         if (memcmp(padded_bytes, decomp_bytes, decomp_size) != 0)
 //         {
-//             std::cout << "❌ 扩展格式数据验证失败" << std::endl;
+//             std::cout << "❌ Extended format data verification failed" << std::endl;
 //             const double *p = data_ptr;
 //             const double *d = host_decompressed_data;
 //             int shown = 0;
@@ -211,14 +211,14 @@
 //             {
 //                 if (std::abs(p[i] - d[i]) > 1e-10)
 //                 {
-//                     std::cout << "  不匹配[" << i << "]: " << p[i] << " vs " << d[i] << std::endl;
+//                     std::cout << "  Mismatch[" << i << "]: " << p[i] << " vs " << d[i] << std::endl;
 //                     ++shown;
 //                 }
 //             }
 //         }
 //         else
 //         {
-//             std::cout << "✓ 扩展格式数据验证成功" << std::endl;
+//             std::cout << "✓ Extended format data verification succeeded" << std::endl;
 //         }
 
 //         // 结果返回
@@ -246,7 +246,7 @@
 //         return result;
 //     }
 //     else{
-//         // 数据传输
+//         // Data transfer
 //         flsgpu::device::ALPColumn<double> device_base_column;
 //         try
 //         {
@@ -255,7 +255,7 @@
 //         }
 //         catch (const std::exception &e)
 //         {
-//             std::cerr << "❌ 基础列复制到 GPU 失败: " << e.what() << std::endl;
+//             std::cerr << "❌ Copy of base column to GPU failed: " << e.what() << std::endl;
 //             flsgpu::host::free_column(host_base_column);
 //             return CompressionInfo{};
 //         }

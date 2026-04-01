@@ -3,8 +3,8 @@
 // #include "Falcon_compressor.cuh"
 
 // Falcon_pipeline.cuh
-// 流水线压缩和解压缩类
-// 路径: Falcon\include\Falcon_pipeline.cuh
+// Pipeline compression and decompression class
+// Path: Falcon/include/Falcon_pipeline.cuh
 
 #pragma once
 
@@ -14,37 +14,37 @@
 #include "Falcon_compressor.cuh"
 #include "Falcon_decompressor.cuh"
 
-// 流水线性能分析结构体
+// Pipeline performance analysis structure
 struct PipelineAnalysis {
-    float total_size = 0;           // 数据总大小(MB)
-    float compression_ratio = 0;    // 压缩率
-    float comp_time = 0;            // 压缩时间(ms)
-    float decomp_time = 0;          // 解压缩时间(ms)
-    float comp_throughout = 0;      // 压缩吞吐量(GB/s)
-    float decomp_throughout = 0;    // 解压缩吞吐量(GB/s)
-    float total_compressed_size = 0; // 压缩后总大小(MB)
-    size_t chunk_size = 0;          // 块大小
+    float total_size = 0;           // Total data size (MB)
+    float compression_ratio = 0;    // Compression ratio
+    float comp_time = 0;            // Compression time (ms)
+    float decomp_time = 0;          // Decompression time (ms)
+    float comp_throughout = 0;      // Compression throughput (GB/s)
+    float decomp_throughout = 0;    // Decompression throughput (GB/s)
+    float total_compressed_size = 0; // Total compressed size (MB)
+    size_t chunk_size = 0;          // Chunk size
 };
 
-// 压缩结果结构体
+// Compression result structure
 struct CompressionResult {
     PipelineAnalysis analysis;
-    std::vector<size_t> chunkSizes;        // 每个chunk的压缩大小(字节)
-    std::vector<size_t> chunkElementCounts; // 每个chunk的元素数量
-    size_t totalChunks;                    // 总chunk数量
+    std::vector<size_t> chunkSizes;        // Compressed size of each chunk (bytes)
+    std::vector<size_t> chunkElementCounts; // Number of elements in each chunk
+    size_t totalChunks;                    // Total number of chunks
 };
 
-// 压缩数据结构体
+// Compressed data structure
 struct CompressedData {
-    unsigned char* cmpBytes;                // 压缩数据缓冲
-    size_t totalCompressedSize;             // 总压缩大小
-    size_t totalElements;                   // 原始数据元素总数
-    std::vector<size_t> chunkSizes;         // 每个chunk的压缩大小(字节)
-    std::vector<size_t> chunkElementCounts; // 每个chunk的元素数量
-    size_t totalChunks;                     // 总chunk数量
+    unsigned char* cmpBytes;                // Compressed data buffer
+    size_t totalCompressedSize;             // Total compressed size
+    size_t totalElements;                   // Total number of original elements
+    std::vector<size_t> chunkSizes;         // Compressed size of each chunk (bytes)
+    std::vector<size_t> chunkElementCounts; // Number of elements in each chunk
+    size_t totalChunks;                     // Total number of chunks
 };
 
-// 处理数据结构体
+// Processed data structure
 struct ProcessedData {
     double *oriData;
     unsigned char *cmpBytes;
@@ -53,15 +53,15 @@ struct ProcessedData {
     size_t nbEle;
 };
 
-// 流水线阶段枚举
+// Pipeline stage enum
 enum Stage { 
-    IDLE,           // 空闲
-    SIZE_PENDING,   // 等待大小信息
-    DATA_PENDING    // 等待数据传输
+    IDLE,           // Idle
+    SIZE_PENDING,   // Waiting for size information
+    DATA_PENDING    // Waiting for data transfer
 };
 
 
-// 流水线压缩解压缩类
+// Pipeline compression and decompression class
 class FalconPipeline {
 public:
     FalconPipeline()
@@ -71,48 +71,48 @@ public:
     FalconPipeline(int numStreams);
     ~FalconPipeline();
 
-    // 执行压缩流水线
+    // Execute compression pipeline
     CompressionResult executeCompressionPipeline(
         ProcessedData &data, 
         size_t chunkSize);
 
-    // 执行压缩流水线(指定流数量)
+    // Execute compression pipeline with a specified number of streams
     CompressionResult executeCompressionPipeline(
         ProcessedData &data, 
         size_t chunkSize,
         int numStreams);
 
-    // 执行解压缩流水线
+    // Execute decompression pipeline
     PipelineAnalysis executeDecompressionPipeline(
         const CompressionResult& compResult,
         ProcessedData &decompData,
         bool visualize = true);
 
-    // 执行解压缩流水线(指定流数量)
+    // Execute decompression pipeline with a specified number of streams
     PipelineAnalysis executeDecompressionPipeline(
         const CompressionResult& compResult,
         ProcessedData &decompData,
         int numStreams,
         bool visualize = true);
 
-    // 辅助函数:从压缩结果创建CompressedData结构
+    // Helper: create a CompressedData structure from a CompressionResult
     static CompressedData createCompressedData(
         const CompressionResult& compResult,
         const ProcessedData& originalData);
 
-    // 设置流数量
+    // Set the number of streams
     void setNumStreams(int numStreams) { 
         NUM_STREAMS = numStreams; 
     }
 
-    // 获取当前流数量
+    // Get the current number of streams
     int getNumStreams() const { 
         return NUM_STREAMS; 
     }
 
-//消融实验一：核函数
+// Ablation study 1: kernel functions
 
-    //消融实验1.1：全稀疏与全稠密 （解压与标准版一致）
+    // Ablation 1.1: fully sparse vs fully dense (decompression is identical to the standard version)
         //  NoPack
 
     CompressionResult executeCompressionPipelineNoPack(
@@ -125,7 +125,7 @@ public:
     ProcessedData &data, 
     size_t chunkSize);
 
-    //消融实验1.2：暴力计算
+    // Ablation 1.2: brute-force computation
     
         //  Br
     
@@ -133,24 +133,24 @@ public:
     ProcessedData &data, 
     size_t chunkSize);   
 
-//消融实验三：流水线
+// Ablation study 3: pipeline behavior
 
-    //阻塞
+    // Blocking
 
     CompressionResult executeCompressionPipelineBlock(
         ProcessedData &data,
         size_t chunkSize);
 
-    //非阻塞
+    // Non-blocking
 
     CompressionResult executeCompressionPipelineNoBlock(
         ProcessedData &data,
         size_t chunkSize);
 
 private:
-    int NUM_STREAMS;  // CUDA流数量
+    int NUM_STREAMS;  // Number of CUDA streams
 
-    // 内部实现函数
+    // Internal implementation functions
     CompressionResult executeCompressionPipelineImpl(
         ProcessedData &data,
         size_t chunkSize,
@@ -162,8 +162,8 @@ private:
         int numStreams,
         bool visualize);
     
-// 消融实验（核函数）
-
+// Ablation implementations (kernel functions)
+    
     // NOPACK
     CompressionResult executeCompressionPipelineImpl_NoPack(
     ProcessedData &data,

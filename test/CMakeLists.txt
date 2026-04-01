@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.11)
 
-# 设置策略以允许使用旧的FindCUDA模块
+# Set policy to allow using the legacy FindCUDA module
 if(POLICY CMP0146)
     cmake_policy(SET CMP0146 OLD)
 endif()
 
-# 在project()之前设置CUDA标志，确保CMake确定CUDA编译器ID时能使用
-# 这修复了cmath找不到的问题
+# Set CUDA flags before project() so CMake can determine the CUDA compiler ID
+# This fixes the issue of not finding <cmath>
 set(CMAKE_CUDA_FLAGS_INIT "-I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11 -std=c++17 -Xcompiler=-std=c++17")
 
 project(CompressionTests CUDA CXX)
@@ -15,16 +15,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_STANDARD 17)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
-# 设置 CUDA 标志
+# Set CUDA flags
 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -Wno-deprecated-gpu-targets")
 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --expt-relaxed-constexpr --expt-extended-lambda")
 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -std=c++17 -Xcompiler=-std=c++17")
 
-# 确保CUDA编译器能找到C++标准库（修复cmath找不到的问题）
+# Ensure the CUDA compiler can find the C++ standard library (fixes <cmath> not found)
 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -I/usr/include/c++/11")
 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -I/usr/include/x86_64-linux-gnu/c++/11")
 
-# 查找 nvcomp
+# Find nvcomp
 find_package(nvcomp CONFIG PATHS 
     /usr/lib/x86_64-linux-gnu/nvcomp/11/cmake/nvcomp
     /usr/lib/x86_64-linux-gnu/cmake/nvcomp
@@ -34,13 +34,13 @@ find_package(nvcomp CONFIG PATHS
 if(nvcomp_FOUND)
     message(STATUS "Found nvcomp using CMake config")
     set(NVCOMP_LIBRARIES nvcomp::nvcomp)
-    set(NVCOMP_INCLUDE_DIRS "")  # 由目标自己处理
+    set(NVCOMP_INCLUDE_DIRS "")  # Handled by the target itself
     # get_target_property(NVCOMP_INCLUDE_DIRS nvcomp::nvcomp INTERFACE_INCLUDE_DIRECTORIES)
 else()
     set(NVCOMP_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/test/baseline/nvcomp/include)
 endif()
 
-# 添加子项目
+# Add subprojects
 add_subdirectory(baseline/ALP)
 add_subdirectory(baseline/ndzip)
 add_subdirectory(baseline/elf)
@@ -54,7 +54,7 @@ add_subdirectory(baseline/patas)
 
 message(STATUS "✓ ALP-G library added: alpg_lib target is available")
 
-# 查找依赖包
+# Find dependencies
 find_package(GTest REQUIRED)
 # find_package(benchmark REQUIRED)
 find_package(Boost REQUIRED COMPONENTS program_options)
@@ -63,16 +63,16 @@ find_package(CUDA REQUIRED)
 message(STATUS "CUDA Include Directories: ${CUDA_INCLUDE_DIRS}")
 include_directories(${CUDA_INCLUDE_DIRS})
 
-# 设置 CUDA 架构
+# Set CUDA architectures
 # set(CMAKE_CUDA_ARCHITECTURES 70)
 
 
 
-# ==================== 重要修复：创建共享的CUDA对象库 ====================
-# 这避免了多个目标重复编译相同的CUDA文件
+# ==================== Important fix: create a shared CUDA object library ====================
+# This avoids recompiling the same CUDA files for multiple targets
 
 
-# GPU源文件编译为对象库（关键修复）
+# Compile GPU source files into an object library (key fix)
 cuda_add_library(Falcon_gpu_lib STATIC
     # ${CMAKE_SOURCE_DIR}/src/gpu/FalconCompressor_1024.cu
     # ${CMAKE_SOURCE_DIR}/src/gpu/FalconDecompressor_1024.cu
@@ -89,7 +89,7 @@ target_include_directories(Falcon_gpu_lib PUBLIC
     ${CMAKE_SOURCE_DIR}/src/utils
 )
 
-# 为 Falcon_gpu_lib 设置编译选项以降低内存使用
+# Set compile options for Falcon_gpu_lib to reduce memory usage
 target_compile_options(Falcon_gpu_lib PRIVATE
     $<$<COMPILE_LANGUAGE:CUDA>:
         -Xcompiler=-O2
@@ -98,7 +98,7 @@ target_compile_options(Falcon_gpu_lib PRIVATE
     >
 )
 
-# 数据工具库
+# Data utility library
 add_library(dataset_utils_lib STATIC
     data/dataset_utils.cpp
 )
@@ -107,7 +107,7 @@ target_include_directories(dataset_utils_lib PUBLIC
     ${CMAKE_SOURCE_DIR}/test/data
 )
 
-# ==================== 全局包含目录 ====================
+# ==================== Global include directories ====================
 include_directories(
     ${CMAKE_SOURCE_DIR}/test/baseline/ALP/include
     ${CMAKE_SOURCE_DIR}/test/data
@@ -121,7 +121,7 @@ include_directories(
 )
 
 
-# ==================== GPU测试目标（使用共享库） ====================
+# ==================== GPU test targets (using shared library) ====================
 
 # test_gpu_nopack
 cuda_add_executable(test_gpu_nopack 
@@ -206,9 +206,9 @@ target_link_libraries(test_muti_3step_noblock
     pthread
 )
 
-# ==================== 其他测试目标 ====================
+# ==================== Other test targets ====================
 
-# ALP测试
+# ALP tests
 add_executable(test_ALP 
     test_ALP.cpp
 )
@@ -234,7 +234,7 @@ target_link_libraries(test_ALP_GPU
     # ALP
 )
 
-# 添加 ALP-G 包含目录到 test_ALP_GPU
+# Add ALP-G include directories to test_ALP_GPU
 target_include_directories(test_ALP_GPU PRIVATE
     ${CMAKE_SOURCE_DIR}/test/baseline/ALP-G/src
     ${CMAKE_SOURCE_DIR}/test/baseline/ALP-G/src/alp
@@ -245,13 +245,13 @@ target_include_directories(test_ALP_GPU PRIVATE
     ${CMAKE_SOURCE_DIR}/test/baseline/ALP-G/src/nvcomp
 )
 
-# 设置CUDA编译属性
+# Set CUDA compilation properties
 set_target_properties(test_ALP_GPU PROPERTIES
     CUDA_SEPARABLE_COMPILATION ON
     CUDA_RESOLVE_DEVICE_SYMBOLS ON
 )
 
-# 新版本：使用ALP-G GPU接口的测试
+# New version: tests using ALP-G GPU interface
 cuda_add_executable(test_ALP_GPU_v2 
     test_ALP_GPU_v2.cu
 )
@@ -265,7 +265,7 @@ target_link_libraries(test_ALP_GPU_v2
     pthread
 )
 
-# 添加 ALP-G 包含目录到 test_ALP_GPU_v2
+# Add ALP-G include directories to test_ALP_GPU_v2
 target_include_directories(test_ALP_GPU_v2 PRIVATE
     ${CMAKE_SOURCE_DIR}/test/baseline/ALP-G/src
     ${CMAKE_SOURCE_DIR}/test/baseline/ALP-G/src/alp
@@ -276,7 +276,7 @@ target_include_directories(test_ALP_GPU_v2 PRIVATE
     ${CMAKE_SOURCE_DIR}/test/baseline/ALP-G/src/nvcomp
 )
 
-# 设置CUDA编译属性
+# Set CUDA compilation properties
 set_target_properties(test_ALP_GPU_v2 PROPERTIES
     CUDA_SEPARABLE_COMPILATION ON
     CUDA_RESOLVE_DEVICE_SYMBOLS ON
@@ -284,7 +284,7 @@ set_target_properties(test_ALP_GPU_v2 PROPERTIES
 
 
 
-# ndzip测试
+# ndzip tests
 cuda_add_executable(test_ndzip 
     test_ndzip.cpp
 )
@@ -305,7 +305,7 @@ target_include_directories(test_ndzip PRIVATE
 )
 target_compile_options(test_ndzip PRIVATE ${NDZIP_CUDA_FLAGS})
 
-# ELF测试
+# ELF tests
 add_executable(test_elf 
     test_elf.cpp
 )
@@ -317,7 +317,7 @@ target_link_libraries(test_elf PRIVATE
     elf
 )
 
-# ELF Star测试
+# ELF Star tests
 add_executable(test_elf_star 
     test_elf_star.cpp
 )
@@ -330,7 +330,7 @@ target_link_libraries(test_elf_star PRIVATE
 )
 
 
-# ELF Star GPU测试
+# ELF Star GPU tests
 cuda_add_executable(test_elf_star_g 
     test_elf_star_g.cu
 )
@@ -343,7 +343,7 @@ target_link_libraries(test_elf_star_g
     elf_star_g
 )
 
-# Gorilla 测试
+# Gorilla tests
 add_executable(test_gorilla
     test_gorilla.cpp
 )
@@ -356,7 +356,7 @@ target_include_directories(test_gorilla PRIVATE
     ${CMAKE_SOURCE_DIR}/test/baseline/gorilla
 )
 
-# Chimp128 测试
+# Chimp128 tests
 add_executable(test_chimp
     test_chimp.cpp
 )
@@ -369,7 +369,7 @@ target_include_directories(test_chimp PRIVATE
     ${CMAKE_SOURCE_DIR}/test/baseline/chimp128
 )
 
-    # Patas 测试
+    # Patas tests
     add_executable(test_patas
         test_patas.cpp
     )
@@ -409,7 +409,7 @@ target_link_libraries(test_float_muti_stream
     pthread
 )
 
-# ALP测试
+# ALP tests
 add_executable(test_float_ALP 
     test_float_ALP.cpp
 )
@@ -448,7 +448,7 @@ target_link_libraries(test_float_ALP_GPU
     # ALP
 )
 
-# 添加 ALP-G 包含目录到 test_float_ALP_GPU
+# Add ALP-G include directories to test_float_ALP_GPU
 target_include_directories(test_float_ALP_GPU PRIVATE
     ${CMAKE_SOURCE_DIR}/test/baseline/ALP-G/src
     ${CMAKE_SOURCE_DIR}/test/baseline/ALP-G/src/alp
@@ -459,7 +459,7 @@ target_include_directories(test_float_ALP_GPU PRIVATE
     ${CMAKE_SOURCE_DIR}/test/baseline/ALP-G/src/nvcomp
 )
 
-# 设置CUDA编译属性
+# Set CUDA compilation properties
 set_target_properties(test_float_ALP_GPU PROPERTIES
     CUDA_SEPARABLE_COMPILATION ON
     CUDA_RESOLVE_DEVICE_SYMBOLS ON
@@ -494,7 +494,7 @@ target_link_libraries(test_float_elf PRIVATE
     elf
 )
 
-# ELF Star测试
+# ELF Star tests
 add_executable(test_float_elf_star 
     test_float_elf_star.cpp
 )
@@ -507,7 +507,7 @@ target_link_libraries(test_float_elf_star PRIVATE
 )
 
 
-# ELF Star GPU测试
+# ELF Star GPU tests
 cuda_add_executable(test_float_elf_star_g 
     test_float_elf_star_g.cu
 )
@@ -520,8 +520,8 @@ target_link_libraries(test_float_elf_star_g
     elf_star_g
 )
 
-# gdeflate测试
-    # 暂时禁用(API兼容性问题)
+# gdeflate tests
+    # Temporarily disabled (API compatibility issue)
     cuda_add_executable(test_float_gdeflate 
         test_float_gdeflate.cu
     )
@@ -541,7 +541,7 @@ target_link_libraries(test_float_elf_star_g
 
     
 
-        # Snappy测试
+        # Snappy tests
     add_executable(test_float_Snappy 
         test_float_Snappy.cpp
     )
@@ -578,7 +578,7 @@ target_include_directories(test_float_ndzip PRIVATE
     ${CMAKE_SOURCE_DIR}/test/baseline/ndzip/src/io
 )
 
-# bitcomp测试
+# bitcomp tests
     cuda_add_executable(test_float_bitcomp 
         test_float_bitcomp.cu
     )
@@ -596,9 +596,9 @@ target_include_directories(test_float_ndzip PRIVATE
         )
     endif()
 
-# ==================== nvcomp相关测试（如果找到） ====================
+# ==================== nvcomp-related tests (if found) ====================
 if(nvcomp_FOUND)
-    # LZ4测试
+    # LZ4 tests
     cuda_add_executable(test_LZ4 
         test_LZ4.cu
     )
@@ -616,7 +616,7 @@ if(nvcomp_FOUND)
         )
     endif()
 
-    # gdeflate测试 - 暂时禁用(API兼容性问题)
+    # gdeflate tests - temporarily disabled (API compatibility issue)
     cuda_add_executable(test_gdeflate 
         test_gdeflate.cu
     )
@@ -634,7 +634,7 @@ if(nvcomp_FOUND)
         )
     endif()
 
-    # Snappy测试
+    # Snappy tests
     add_executable(test_Snappy 
         test_Snappy.cpp
     )
@@ -652,7 +652,7 @@ if(nvcomp_FOUND)
         )
     endif()
 
-    # bitcomp测试
+    # bitcomp tests
     cuda_add_executable(test_bitcomp 
         test_bitcomp.cu
     )
@@ -671,7 +671,7 @@ if(nvcomp_FOUND)
     endif()
 endif()
 
-# ==================== 设置输出目录（避免冲突） ====================
+# ==================== Set output directory (avoid conflicts) ====================
 set_target_properties(
     test_gpu test_gpu_nopack test_gpu_spare test_gpu_br 
     # test_gpu_string
@@ -681,7 +681,7 @@ set_target_properties(
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test"
 )
 
-# ==================== 添加自定义命令用于清理 ====================
+# ==================== Add custom command for cleanup ====================
 add_custom_target(clean-all
     COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/CMakeFiles
     COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/bin
@@ -690,7 +690,7 @@ add_custom_target(clean-all
     COMMENT "Cleaning all build files..."
 )
 
-# ==================== 打印配置信息 ====================
+# ==================== Print configuration summary ====================
 message(STATUS "=================================")
 message(STATUS "Configuration Summary:")
 message(STATUS "  CUDA Version: ${CUDA_VERSION}")

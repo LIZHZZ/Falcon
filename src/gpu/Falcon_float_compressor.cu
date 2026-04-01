@@ -2,10 +2,10 @@
 // Created by lz on 24-9-26.
 //
 #include "Falcon_float_compressor.cuh"
-#include <iomanip> // 用于设置输出格式
-// 定义常量
+#include <iomanip> // For formatted debug output
+// Constant definitions
 
-// pow10_table 和 POW_NUM_G
+// pow10_table and POW_NUM_G
 __constant__ float pow10_table[8] = {
     1.0,        // 10^0
     10.0,       // 10^1
@@ -17,7 +17,7 @@ __constant__ float pow10_table[8] = {
     10000000.0, // 10^7
 };
 
-// ZigZag 编码函数
+// ZigZag encoding helper
 // __device__ static uint64_t zigzag_encode_cuda(int64_t value) {
 //     return (value << 1) ^ (value >> 63);
 // }
@@ -73,7 +73,7 @@ __device__ static int getDecimalPlaces(float value, int sp)
         int i = 0;
         float scale = 1.0;
 
-        // 找到能精确表示为整数的最小倍数
+        // Find the smallest multiplier that turns v into an exact integer
         while (i < 9)
         {
             float temp = v * scale;
@@ -86,16 +86,16 @@ __device__ static int getDecimalPlaces(float value, int sp)
             i++;
             scale *= 10.0;
         }
-        return 9; // 达到单精度极限
+        return 9; // Reached single-precision limit
     }
 */
-// 辅助函数：打印缓冲区的指定范围，以十六进制格式显示
+// Helper: print a specified range of the buffer in hexadecimal
 __device__ void print_bytes(const unsigned char *buffer, size_t start, size_t length, const char *label)
 {
     printf("%s: ", label);
     for (size_t i = start; i < start + length; ++i)
     {
-        // 打印每个字节的十六进制表示
+        // Print each byte in hexadecimal form
         printf("%02x ", buffer[i]);
     }
     printf("\n");
@@ -159,23 +159,23 @@ __device__ inline int float2int(float data, int maxDecimalPlaces, int maxBeta)
 __global__ void Falcon_compress_kernel(
     const float *input,
     unsigned char *output,
-    volatile unsigned int *const __restrict__ cmpOffset, // 压缩数据偏移量数组（输出）
-    volatile unsigned int *const __restrict__ locOffset, // 局部偏移量数组（输出）
-    volatile int *const __restrict__ flag,               // 标志数组，用于同步不同warp的状态（输出
+    volatile unsigned int *const __restrict__ cmpOffset, // Compressed data offset array (output)
+    volatile unsigned int *const __restrict__ locOffset, // Local offset array (output)
+    volatile int *const __restrict__ flag,               // Flag array for synchronizing warp states (output)
     int totalSize)
 {
-    // 共享内存，用于在线程块内共享数据
-    __shared__ unsigned int excl_sum; // 排他性前缀和，用于偏移量计算
-    //__shared__ unsigned int base_idx; // 当前warp的基地址索引
+    // Shared memory used within the block
+    __shared__ unsigned int excl_sum; // Exclusive prefix sum used for offset computation
+    //__shared__ unsigned int base_idx; // Base index of the current warp (unused)
 
-    // 获取线程和块信息
+    // Thread and block indices
     int tid = threadIdx.x;
     int bid = blockIdx.x;
     int idx = bid * blockDim.x + tid;
-    const int lane = idx & 0x1f; // 当前线程在warp中的位置（0-31）
-    const int warp = idx >> 5;   // 当前线程所属的warp编号
+    const int lane = idx & 0x1f; // Lane index within the warp (0-31)
+    const int warp = idx >> 5;   // Warp index
 
-    // 每个线程处理1024个数据项
+    // Each thread processes DATA_PER_THREAD elements
     int startIdx = idx * DATA_PER_THREAD;
     int endIdx = min(startIdx + DATA_PER_THREAD, totalSize);
     int numDatas = endIdx - startIdx;
@@ -188,7 +188,7 @@ __global__ void Falcon_compress_kernel(
 
     int base_block_start_idx;// base_block_end_idx;
     // int quant_chunk_idx;
-    // int block_idx; // 如果不使用，可以移除
+    // int block_idx; // Can be removed if unused
 
     int currQuant = 0;
     int lorenQuant = 0;
@@ -198,14 +198,14 @@ __global__ void Falcon_compress_kernel(
     // float4 tmp_buffer;
     // float maxDeV = 0;
     int maxSp = -99;
-    // 1. 采样
+    // 1. Sampling
     for (int i = 0; i < numDatas; i++)
     {
         float value = input[startIdx + i];
         float log10v = log10(std::abs(value));
         int sp = floor(log10v);
         maxSp = device_max(maxSp, sp);  
-        float alpha = getDecimalPlaces(value, sp); // 得到小数位数
+        float alpha = getDecimalPlaces(value, sp); // Number of decimal places
         // float beta = alpha + sp + 1;
         // maxBeta = device_max(maxBeta, beta);
         // if (maxDecimalPlaces < alpha)
@@ -215,17 +215,16 @@ __global__ void Falcon_compress_kernel(
         maxDecimalPlaces = device_max(maxDecimalPlaces, alpha);
     }
     maxBeta = maxSp + maxDecimalPlaces+1;
-    // printf("maxDecimalPlaces:%d\n", maxDecimalPlaces);
-    //  2. FOR + zigzag（用4向量化进行实现）
+    //  2. FOR + zigzag (vectorized)
     uint32_t maxDelta = 0;
-    firstValue = float2int(input[startIdx], maxDecimalPlaces, maxBeta); // 量化第一个
-    prevQuant = firstValue;                                             // 初始化第一个量化值
+    firstValue = float2int(input[startIdx], maxDecimalPlaces, maxBeta); // Quantize the first value
+    prevQuant = firstValue;                                             // Initialize previous quantized value
         
         base_block_start_idx = startIdx + 1;
 
         for(int i=0;i<numDatas-1;i++){
-            currQuant = float2int(input[base_block_start_idx+i], maxDecimalPlaces,maxBeta); // 量化当前数据点
-            lorenQuant = currQuant - prevQuant; // 计算差分
+            currQuant = float2int(input[base_block_start_idx+i], maxDecimalPlaces,maxBeta); // Quantize current point
+            lorenQuant = currQuant - prevQuant; // Compute delta
             deltas[i] = zigzag_encode_cuda(lorenQuant);
         
             maxDelta = device_max_uint32(maxDelta, deltas[i]);
@@ -234,22 +233,20 @@ __global__ void Falcon_compress_kernel(
             //     printf("input %d, ",deltas[i]);
             // }
         }
-    bitCount = maxDelta > 0 ? 32 - __clz(maxDelta) : 1; // 用内置函数 替代处理循环
+    bitCount = maxDelta > 0 ? 32 - __clz(maxDelta) : 1; // Use intrinsic instead of manual loop
     bitCount = min(bitCount, (int)MAX_BITCOUNT);
 
     int numByte = (numDatas-1 + 7) / 8;
     // uint8_t result[64][128];
     uint8_t result[32][128] = {};
-    // 初始化二维数组
-
-    // 遍历每个uint32_t的数据
+    // Initialize 2D array and iterate over each bit-plane
     for (int i = 0; i < bitCount; ++i)
-    { // 行
+    { // Row
         int j = 0;
 
-        while (j + 8 < numDatas-1) // 有效 0.0027->0.0023
+        while (j + 8 < numDatas-1) // Slight optimization: process 8 bits at a time
         {
-            int byteIndex = j / 8; // 当前bit属于第几个字节
+            int byteIndex = j / 8; // Which byte the current bit belongs to
             result[i][byteIndex] = result[i][byteIndex] |
                                    (((deltas[j] >> (bitCount - 1 - i)) & 1) << (7)) |
                                    (((deltas[j + 1] >> (bitCount - 1 - i)) & 1) << (6)) |
@@ -262,21 +259,16 @@ __global__ void Falcon_compress_kernel(
             j += 8;
         }
         for (; j < numDatas-1; ++j)
-        { // 列numBytes
-            // 计算当前行（即bit位）
-            //  if(i==0)
-            //  {
-            //      printf("0x %02x ", deltas[j]); // 打印为十六进制，且确保每个字节以2位输出
-            //  }
-            int byteIndex = j / 8; // 当前bit属于第几个字节
-            int bitIndex = j % 8;  // 当前bit在字节中的位置
+        { // Column (numBytes)
+            int byteIndex = j / 8; // Which byte the current bit belongs to
+            int bitIndex = j % 8;  // Bit position within the byte
 
-            // 提取当前bit位并存入结果数组
+            // Extract the current bit and store it in the result array
             result[i][byteIndex] |= (((deltas[j] >> (bitCount - 1 - i)) & 1) << (7 - bitIndex));
         }
     }
 
-    // 4.2 设置稀疏列，并且进行标记，同时计算bitsize
+    // 4.2 Mark sparse columns and compute bitSize
     uint64_t bitSize = 32 +   // bitsize
                        32 +   // firstValue
                        8ULL + // maxDecimalPlaces
@@ -284,8 +276,8 @@ __global__ void Falcon_compress_kernel(
                        8ULL + // bitCount
                        32;    // flag1
 
-    uint32_t flag1 = 0;    // 用于记录每一列是否为稀疏列
-    uint8_t flag2[32][16]; // 对于稀疏列统计稀疏位置,最多1024个数据，所以最多1024bit，即128byte,
+    uint32_t flag1 = 0;    // Records whether each column is sparse
+    uint8_t flag2[32][16]; // For sparse columns, records sparse positions (up to 1024 bits -> 128 bytes)
     memset(flag2, 0, sizeof(flag2));
 
     // for(int i=0;i<1024;i++){
@@ -297,7 +289,7 @@ __global__ void Falcon_compress_kernel(
 
     int BITS_PER_THREAD = 4;
     for (int i = 0; i < bitCount; i += BITS_PER_THREAD)
-    { // 每次处理4个比特位
+    { // Process BITS_PER_THREAD bit-planes at a time
         for (int b = 0; b < BITS_PER_THREAD && (i + b) < bitCount; ++b)
         {
             int bit = i + b;
@@ -310,15 +302,15 @@ __global__ void Falcon_compress_kernel(
                 uint8_t current_result = result[bit][j];
                 b0 += (current_result == 0);
                 b1 += (current_result != 0);
-                flag2[bit][m_byte] |= (current_result != 0) << m_bit;    // 设置1
-                flag2[bit][m_byte] &= ~((current_result == 0) << m_bit); // 清零
+                flag2[bit][m_byte] |= (current_result != 0) << m_bit;    // Set bit
+                flag2[bit][m_byte] &= ~((current_result == 0) << m_bit); // Clear bit
             }
-            // 使用掩码和算术操作代替分支(有效0.0023->0.0021)
+            // Use mask and arithmetic instead of branches (small optimization)
             uint32_t is_sparse = ((numByte + 7) / 8 + b1) < numByte;
             flag1 |= (is_sparse << bit);
             flag1 &= ~((!is_sparse) << bit);
             bitSize += is_sparse ? ((numByte + 7) / 8 + b1) * 8 : 8 * numByte;
-            // flag2的长度+b1或者numByte*8
+            // flag2 length + b1, or numByte * 8
         }
     }
 
@@ -326,97 +318,93 @@ __global__ void Falcon_compress_kernel(
     {
         bitSize = 0;
     }
-    // 5. 前缀和计算
-    thread_ofs += bitSize; // bitSize是每一个线程处理后需要写入的数据量所占的bit位
+    // 5. Prefix-sum computation
+    thread_ofs += bitSize; // bitSize is the number of bits each thread will write
 
-// 5.1. Warp(块)内前缀和计算，确定每个线程的字节偏移量
+// 5.1. Warp-level prefix sum to determine per-thread byte offsets
 #pragma unroll 5
     for (int i = 1; i < 32; i <<= 1)
     {
         int tmp = __shfl_up_sync(0xffffffff, thread_ofs, i);
         if (lane >= i)
-            thread_ofs += tmp; // 累加偏移量
+            thread_ofs += tmp; // Accumulate offset
     }
-    __syncthreads(); // 同步线程，确保前缀和计算完成
-    // printf("thread_ofs[%d]:%d",lane,thread_ofs);
+    __syncthreads(); // Ensure prefix sum is complete
 
-    // 5.2 Warp(块)内最后一个线程更新locOffset和flag数组
-    if (lane == 31 || numDatas <= 0) // 或者最后一个线程出现，但是不是第32个线程
+    // 5.2 Last warp lane updates locOffset and flag arrays
+    if (lane == 31 || numDatas <= 0) // Or last active thread when fewer than 32 threads
     {
-        locOffset[warp + 1] = thread_ofs; // 更新下一warp的局部偏移量
-        __threadfence();                  // 确保全局内存中的写操作完成
+        locOffset[warp + 1] = thread_ofs; // Update local offset for the next warp
+        __threadfence();                  // Ensure global write has completed
         if (warp == 0)
         {
-            flag[0] = 2; // 标记第一个warp完成前缀和计算
+            flag[0] = 2; // Mark first warp as having completed prefix sum
             __threadfence();
-            flag[1] = 1; // 标记下一个warp可以开始
+            flag[1] = 1; // Mark next warp as ready to start
             __threadfence();
         }
         else
         {
-            flag[warp + 1] = 1; // 标记下一个warp可以开始
+            flag[warp + 1] = 1; // Mark next warp as ready to start
             __threadfence();
         }
         // printf("flag[%d] ready\n",warp + 1);
     }
-    __syncthreads(); // 同步线程，确保flag更新完成
+    __syncthreads(); // Ensure flag updates are visible
 
-    // 5.3 对于非第一个warp，计算排他性前缀和（有问题）
+    // 5.3 For non-zero warps, compute exclusive prefix sum
     if (warp > 0)
     {
-        if (!lane) // 每个warp的第一个线程
+        if (!lane) // First lane of each warp
         {
-            int lookback = warp;  // 查找前一个warp(块)的状态
-            int loc_excl_sum = 0; // 本地排他性前缀和
+            int lookback = warp;  // Walk backwards over previous warps
+            int loc_excl_sum = 0; // Local exclusive prefix sum
 
-            while (lookback > 0) // 向前计算得到当前wrap（块）的起始位置
+            while (lookback > 0) // Accumulate prefix sum for all previous warps
             {
                 int status;
                 do
                 {
-                    status = flag[lookback]; // 获取一个warp的状态
-                                             //    printf(" loop flag[%d]:%d\n",lookback,status);
-                    __threadfence();         // 确保读取到最新的状态
+                    status = flag[lookback]; // Read warp status
+                    __threadfence();         // Ensure we see the latest value
                 } while (status == 0);
 
                 if (status == 2)
                 {
-                    loc_excl_sum += cmpOffset[lookback]; // 累加前一个warp的cmpOffset
+                    loc_excl_sum += cmpOffset[lookback]; // Accumulate previous cmpOffset
                     __threadfence();
                     break;
                 }
                 if (status == 1)
-                    loc_excl_sum += locOffset[lookback]; // 累加前一个warp的locOffset
+                    loc_excl_sum += locOffset[lookback]; // Accumulate previous locOffset
                 lookback--;
                 __threadfence();
                 // printf(" turn flag[%d]:%d\n",lookback,status);
             }
-            // printf(" loop out warp:%d\n",warp);
-            excl_sum = loc_excl_sum; // 存储排他性前缀和
+            excl_sum = loc_excl_sum; // Store exclusive prefix sum
 
-            cmpOffset[warp] = excl_sum; // 更新当前warp的cmpOffset
-            __threadfence();            // 确保写操作完成
+            cmpOffset[warp] = excl_sum; // Update cmpOffset for current warp
+            __threadfence();            // Ensure write is visible
 
             // printf("flag[%d] over1\n",warp);
             if (warp == gridDim.x - 1)
             {
-                cmpOffset[warp + 1] = cmpOffset[warp] + locOffset[warp + 1]; // 更新最后一个warp的cmpOffset
+                cmpOffset[warp + 1] = cmpOffset[warp] + locOffset[warp + 1]; // Update final warp cmpOffset
                 __threadfence();
             }
-            flag[warp] = 2; // 标记当前warp完成
-            // printf("flag[%d] over2\n",warp);
+            flag[warp] = 2; // Mark current warp as complete
             __threadfence();
         }
     }
     else
     {
-        // warp==0：显式把排他前缀和置 0（由一个线程写，block 内可见）
+        // warp == 0: explicitly set exclusive sum to zero (single writer, block-visible)
         if (!lane)
         {
             excl_sum = 0;
         }
     }
-    __syncthreads(); // 同步线程，确保cmpOffset更新完成
+    __syncthreads(); // Synchronize to ensure cmpOffset is fully updated
     if (numDatas <= 0)
     {
         if (cmpOffset[warp + 1] <= 0)
@@ -425,34 +413,34 @@ __global__ void Falcon_compress_kernel(
         }
         return;
     }
-    // 5.4 得到写入位置
-    int outputIdxBit = excl_sum + thread_ofs - bitSize; // bit wrap偏移+wrap内偏移 得到当前压缩后数据应该写入的起始位置
+    // 5.4 Compute write position
+    int outputIdxBit = excl_sum + thread_ofs - bitSize; // Global bit offset of the compressed data to be written
     int outputIdx = (outputIdxBit + 7) / 8;
 
-    // 6 开始写入
+    // 6. Begin writing out the compressed block
 
     unsigned int firstValueBits = 0;
     memcpy(&firstValueBits, &firstValue, sizeof(int));
     // if (outputIdx % 8 != 0) {
-    // 6.1 写入 bitSize (4 字节)
+    // 6.1 Write bitSize (4 bytes)
     for (int i = 0; i < 4; i++)
     {
         output[outputIdx + i] = (bitSize >> (i * 8)) & 0xFF;
     }
 
-    // 6.2. 写入 firstValue (4 字节)
+    // 6.2. Write firstValue (4 bytes)
     for (int i = 0; i < 4; i++)
     {
         output[outputIdx + 4 + i] = (firstValueBits >> (i * 8)) & 0xFF;
     }
 
     // }
-    // 6.3. 写入 maxDecimalPlaces 和 bitCount (各1字节)
+    // 6.3. Write maxDecimalPlaces and bitCount (1 byte each)
     output[outputIdx + 8] = static_cast<unsigned char>(maxDecimalPlaces);
     output[outputIdx + 9] = static_cast<unsigned char>(maxBeta);
     output[outputIdx + 10] = static_cast<unsigned char>(bitCount);
 
-    // 6.4 写入flag1(4字节 标识稀疏)
+    // 6.4 Write flag1 (4 bytes, sparse-column mask)
     for (int i = 0; i < 4; i++)
     {
         output[outputIdx + 11 + i] = (flag1 >> (i * 8)) & 0xFF;
@@ -461,15 +449,15 @@ __global__ void Falcon_compress_kernel(
     //     printf("COM: bitSize:%d, firsta: %d, maxDecimalPlaces: %d, maxBeta: %d, flag1: %d, bitcount: %d \n", bitSize, firstValueBits,maxDecimalPlaces,maxBeta,flag1 ,bitCount);
     // }
     // printf("In %d  flag1 is : %llx\n",idx,flag1);
-    // 6.5 写入每一列
+    // 6.5 Write each column
     int flag2Byte = (numByte + 7) / 8;
     int ofs = outputIdx + 15;
-    // int res=0;              //byte中剩余的bit位
+    // int res=0;              // remaining bits in the last byte
     for (int i = 0; i < bitCount; i++)
     {
-        if ((flag1 & (1ULL << i)) != 0) // flag第i个bit不为0:稀疏
+        if ((flag1 & (1ULL << i)) != 0) // Non-zero flag bit i means this column is sparse
         {
-            // 6.5.1 稀疏列写入flag2+data
+            // 6.5.1 flag2+data
             for (int j = 0; j < flag2Byte; j++)
             {
                 output[ofs++] = static_cast<unsigned char>(flag2[i][j]);
@@ -485,7 +473,7 @@ __global__ void Falcon_compress_kernel(
         }
         else
         {
-            // 6.5.2 非稀疏列写入data
+            // 6.5.2 For dense columns, write data directly
 
             for (int j = 0; j < numByte; j++)
             {
@@ -494,7 +482,7 @@ __global__ void Falcon_compress_kernel(
         }
     }
 }
-// 返回的cmpSize是BYTE
+// cmpSize is returned in bytes
 void FalconCompressor::Falcon_compress(float *d_oriData, unsigned char *d_cmpBytes, size_t nbEle, size_t *cmpSize, cudaStream_t stream)
 {
 
@@ -586,10 +574,10 @@ __global__ void compressBlockKernel(
     int tid = threadIdx.x;
     int bid = blockIdx.x;
     int idx = bid * blockDim.x + tid;
-    const int lane = idx & 0x1f; // 当前线程在warp中的位置（0-31）
-    const int warp = idx >> 5;   // 当前线程所属的warp编号
+    const int lane = idx & 0x1f; // Lane index within the warp (0-31)
+    const int warp = idx >> 5;   // Warp index
 
-    // 每个线程处理1024个数据项
+    // Each thread processes DATA_PER_THREAD elements
     int startIdx = idx * DATA_PER_THREAD;
     int endIdx = min(startIdx + DATA_PER_THREAD, totalSize);
     int numDatas = endIdx - startIdx;
@@ -616,22 +604,22 @@ __global__ void compressBlockKernel(
     unsigned int thread_ofs = 0;
     float4 tmp_buffer;
 
-    // 1. 采样
+    // 1. Sampling
     for (int i = 0; i < numDatas; i++)
     {
         float value = input[startIdx + i];
         float log10v = log10(std::abs(value));
         int sp = floor(log10v);
 
-        float alpha = getDecimalPlaces(value, sp); // 得到小数位数
+        float alpha = getDecimalPlaces(value, sp); // Number of decimal places
         float beta = alpha + sp + 1;
         maxBeta = device_max(maxBeta, beta);
         maxDecimalPlaces = device_max(maxDecimalPlaces, alpha);
     }
 
     uint32_t maxDelta = 0;
-    firstValue = float2int(input[startIdx], maxDecimalPlaces, maxBeta); // 量化第一个
-    prevQuant = firstValue;                                             // 初始化第一个量化值
+    firstValue = float2int(input[startIdx], maxDecimalPlaces, maxBeta); // Quantize the first value
+    prevQuant = firstValue;                                             // Initialize previous quantized value
     for (int j = 0; j < (numDatas + 30) / 32; j++)
     {                                                   // 每个线程的数量 / 一个数据批次（32）
         base_block_start_idx = startIdx + j * 32 + 1;       // 每一组32个数据的起始位置
@@ -775,10 +763,9 @@ __global__ void compressBlockKernel(
 
     int numByte = (numDatas-1 + 7) / 8;
     // uint8_t result[64][128];
-    uint8_t result[32][128] = {}; // 0初始化
-    // 初始化二维数组
+    uint8_t result[32][128] = {}; // Zero-initialize 2D array
 
-    // 遍历每个uint64_t的数据
+    // Traverse each bit-plane
     for (int i = 0; i < bitCount; ++i)
     { // 行
         int j = 0;
@@ -859,18 +846,18 @@ __global__ void compressBlockKernel(
     // 5.2 Warp(块)内最后一个线程更新locOffset和flag数组
     if (lane == 31)
     {
-        locOffset[warp + 1] = thread_ofs; // 更新下一warp的局部偏移量
-        __threadfence();                  // 确保全局内存中的写操作完成
+        locOffset[warp + 1] = thread_ofs; // Update local offset for the next warp
+        __threadfence();                  // Ensure global write has completed
         if (warp == 0)
         {
-            flag[0] = 2; // 标记第一个warp完成前缀和计算
+            flag[0] = 2; // Mark first warp as having completed prefix sum
             __threadfence();
-            flag[1] = 1; // 标记下一个warp可以开始
+            flag[1] = 1; // Mark next warp as ready to start
             __threadfence();
         }
         else
         {
-            flag[warp + 1] = 1; // 标记下一个warp可以开始
+            flag[warp + 1] = 1; // Mark next warp as ready to start
             __threadfence();
         }
     }
@@ -879,12 +866,12 @@ __global__ void compressBlockKernel(
     // 5.3 对于非第一个warp，计算排他性前缀和（有问题）
     if (warp > 0)
     {
-        if (!lane) // 每个warp的第一个线程
+        if (!lane) // First lane of each warp
         {
-            int lookback = warp;  // 查找前一个warp(块)的状态
-            int loc_excl_sum = 0; // 本地排他性前缀和
+            int lookback = warp;  // Walk backwards over previous warps
+            int loc_excl_sum = 0; // Local exclusive prefix sum
 
-            while (lookback > 0) // 向前计算得到当前wrap（块）的起始位置
+            while (lookback > 0) // Accumulate prefix sum for all previous warps
             {
                 int status;
                 do
@@ -926,10 +913,10 @@ __global__ void compressBlockKernel(
             excl_sum = 0;
         }
     }
-    __syncthreads(); // 同步线程，确保cmpOffset更新完成
+    __syncthreads(); // Synchronize to ensure cmpOffset is fully updated
 
-    // 5.4 得到写入位置
-    int outputIdxBit = excl_sum + thread_ofs - bitSize; // bit wrap偏移+wrap内偏移 得到当前压缩后数据应该写入的起始位置
+    // 5.4 Compute write position
+    int outputIdxBit = excl_sum + thread_ofs - bitSize; // Global bit offset of the compressed data to be written
     int outputIdx = (outputIdxBit + 7) / 8;
 
     bitSizes[idx] = bitSize;
@@ -947,7 +934,7 @@ __global__ void compressBlockKernel(
     {
         output[outputIdx + 4 + i] = (firstValueBits >> (i * 8)) & 0xFF;
     }
-    // 6.3. 写入 maxDecimalPlaces 和 bitCount (各1字节)
+    // 6.3. Write maxDecimalPlaces and maxBeta (1 byte each)
     output[outputIdx + 8] = static_cast<unsigned char>(maxDecimalPlaces);
     output[outputIdx + 9] = static_cast<unsigned char>(maxBeta);
     output[outputIdx + 10] = static_cast<unsigned char>(bitCount);
@@ -965,7 +952,7 @@ __global__ void compressBlockKernel(
     int ofs = outputIdx + 15;
     for (int i = 0; i < bitCount; i++)
     {
-        if ((flag1 & (1ULL << i)) != 0) // flag第i个bit不为0:稀疏
+        if ((flag1 & (1ULL << i)) != 0) // Non-zero flag bit i means this column is sparse
         {
             // 6.5.1 稀疏列写入flag2+data
             for (int j = 0; j < flag2Byte; j++)
@@ -982,7 +969,7 @@ __global__ void compressBlockKernel(
         }
         else
         {
-            // 6.5.2 非稀疏列写入data
+            // 6.5.2 For dense columns, write data directly
 
             for (int j = 0; j < numByte; j++)
             {
@@ -992,7 +979,7 @@ __global__ void compressBlockKernel(
     }
 }
 
-// 初始化设备内存
+// Initialize device memory
 void FalconCompressor::setupDeviceMemory(
     const std::vector<float> &input,
     float *&d_input,
@@ -1002,18 +989,18 @@ void FalconCompressor::setupDeviceMemory(
     size_t inputSize = input.size();
     int numBlocks = (inputSize + DATA_PER_THREAD - 1) / (DATA_PER_THREAD);
 
-    // 分配输入数据的设备内存
+    // Allocate device memory for input
     cudaCheckError(cudaMalloc((void **)&d_input, inputSize * sizeof(float)));
     cudaCheckError(cudaMemcpy(d_input, input.data(), inputSize * sizeof(float), cudaMemcpyHostToDevice));
 
-    // 分配输出数据的设备内存
+    // Allocate device memory for output
     cudaCheckError(cudaMalloc((void **)&d_output, numBlocks * MAX_BYTES_PER_BLOCK * sizeof(unsigned char)));
 
-    // 分配 bitSizes 的设备内存
+    // Allocate device memory for bitSizes
     cudaCheckError(cudaMalloc((void **)&d_bitSizes, numBlocks * sizeof(uint64_t)));
 }
 
-// 更新释放设备内存的函数
+// Function to free device memory
 void FalconCompressor::freeDeviceMemory(
     float *d_input,
     unsigned char *d_output,
@@ -1024,7 +1011,7 @@ void FalconCompressor::freeDeviceMemory(
     cudaFree(d_bitSizes);
 }
 
-// 主压缩函数
+// Main compression function
 void FalconCompressor::compress(const std::vector<float> &input, std::vector<unsigned char> &output)
 {
     // std::cout<<"begin1\n";
@@ -1032,9 +1019,9 @@ void FalconCompressor::compress(const std::vector<float> &input, std::vector<uns
     if (inputSize == 0)
         return;
 
-    int blockSize = BLOCK_SIZE_G;                                                                     // 32个线程每块
-    size_t numBlocks = (inputSize + blockSize * DATA_PER_THREAD - 1) / (blockSize * DATA_PER_THREAD); // 多少个线程块
-    size_t numthread = (inputSize + DATA_PER_THREAD - 1) / (DATA_PER_THREAD);                         // 多少个数据块(线程)
+    int blockSize = BLOCK_SIZE_G;                                                                     // 32 threads per block
+    size_t numBlocks = (inputSize + blockSize * DATA_PER_THREAD - 1) / (blockSize * DATA_PER_THREAD); // Number of thread blocks
+    size_t numthread = (inputSize + DATA_PER_THREAD - 1) / (DATA_PER_THREAD);                         // Number of data blocks (threads)
     float *d_input = nullptr;
     unsigned char *d_output = nullptr;
     uint64_t *d_bitSizes = nullptr;
@@ -1051,21 +1038,21 @@ void FalconCompressor::compress(const std::vector<float> &input, std::vector<uns
 
     cudaMalloc((void **)&d_flag, sizeof(int) * cmpOffSize);
     cudaMemset(d_flag, 0, sizeof(int) * cmpOffSize);
-    // 分配设备内存
+    // Allocate device memory
     setupDeviceMemory(input, d_input, d_output, d_bitSizes);
 
-    size_t sharedMemSize = 64; // 确保 SharedMemory 已正确定义
+    size_t sharedMemSize = 64; // Ensure SharedMemory is defined correctly
     // std::cout<<"begin2\n";
 
-    // 创建CUDA事件用于计时
+    // Create CUDA events for timing
     cudaEvent_t start, stop;
     cudaCheckError(cudaEventCreate(&start));
     cudaCheckError(cudaEventCreate(&stop));
 
-    // 记录开始事件
+    // Record start event
     cudaCheckError(cudaEventRecord(start));
 
-    // 启动核函数
+    // Launch kernel
     compressBlockKernel<<<numBlocks, blockSize, sharedMemSize>>>(
         d_input,
         inputSize,
@@ -1074,7 +1061,7 @@ void FalconCompressor::compress(const std::vector<float> &input, std::vector<uns
         d_cmpOffset,
         d_locOffset,
         d_flag);
-    // 检查错误
+    // Check for errors
     cudaCheckError(cudaGetLastError());
     cudaCheckError(cudaDeviceSynchronize());
     // std::cout<<"end2\n";
