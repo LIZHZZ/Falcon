@@ -1,6 +1,4 @@
 //
-// Created by lz on 24-9-26.
-//
 #include "Falcon_float_compressor.cuh"
 #include <iomanip> // For formatted debug output
 // Constant definitions

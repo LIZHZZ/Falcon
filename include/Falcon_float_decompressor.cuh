@@ -1,5 +1,4 @@
 //
-// Created by lz on 24-9-26.
 // cuCompressor/include/Falcon_float_decompressor.cuh
 //
 #include <vector>

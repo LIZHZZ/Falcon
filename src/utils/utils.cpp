@@ -1,6 +1,4 @@
 //
-// Created by lz on 24-9-27.
-//
 
 #include "utils.h"
 

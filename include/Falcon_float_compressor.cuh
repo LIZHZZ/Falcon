@@ -1,6 +1,4 @@
 //
-// Created by lz on 24-9-26.
-//
 // Falcon_float_compressor.cuh
 
 #include <cuda_runtime.h>
