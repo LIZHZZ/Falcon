@@ -28,7 +28,7 @@ private:
             lead_distribution, leading_representation, leading_round, lead_positions);
         
         if (num_positions <= 0 || num_positions > 32) {
-            return 0;  // 失败情况
+            return 0;  //translated comment
         }
         
         leading_bits_per_value = kPositionLength2Bits[num_positions];
@@ -41,7 +41,7 @@ private:
             trail_distribution, trailing_representation, trailing_round, trail_positions);
         
         if (num_positions <= 0 || num_positions > 32) {
-            return 0;  // 失败情况
+            return 0;  //translated comment
         }
         
         trailing_bits_per_value = kPositionLength2Bits[num_positions];
@@ -84,7 +84,7 @@ private:
             int leading_count = __clzll(_xor);
             int trailing_count = (_xor == 0) ? 64 : (__ffsll(_xor) - 1);
             
-            // 边界检查
+            //translated comment
             if (leading_count < 0 || leading_count >= 64) leading_count = 0;
             if (trailing_count < 0 || trailing_count >= 64) trailing_count = 0;
             
@@ -95,10 +95,10 @@ private:
                 (leadingZeros - storedLeadingZeros) + (trailingZeros - storedTrailingZeros) < 
                 1 + leading_bits_per_value + trailing_bits_per_value) {
                 
-                // case 1: 重用
+                //case 1:
                 int centerBits = 64 - storedLeadingZeros - storedTrailingZeros;
                 if (centerBits <= 0 || centerBits > 64) {
-                    // 回退到新编码
+                    //translated comment
                     storedLeadingZeros = leadingZeros;
                     storedTrailingZeros = trailingZeros;
                     centerBits = 64 - storedLeadingZeros - storedTrailingZeros;
@@ -110,7 +110,7 @@ private:
                         writeLong(&writer, _xor >> storedTrailingZeros, centerBits);
                         thisSize += 2 + leading_bits_per_value + trailing_bits_per_value + centerBits;
                     } else {
-                        // 极端情况，写入原始值
+                        //translated comment
                         write(&writer, 1, 2);
                         thisSize += 2;
                     }
@@ -125,14 +125,14 @@ private:
                     thisSize += len;
                 }
             } else {
-                // case 00: 新的leading/trailing
+                //case 00: leading/trailing
                 storedLeadingZeros = leadingZeros;
                 storedTrailingZeros = trailingZeros;
                 int centerBits = 64 - storedLeadingZeros - storedTrailingZeros;
                 
                 if (centerBits <= 0 || centerBits > 64) {
-                    // 极端情况处理
-                    write(&writer, 1, 2);  // 当作相同值处理
+                    //translated comment
+                    write(&writer, 1, 2);  //translated comment
                     thisSize += 2;
                 } else {
                     int len = 2 + leading_bits_per_value + trailing_bits_per_value + centerBits;
@@ -164,7 +164,7 @@ public:
         if (out_len_byte > 4) {
             initBitWriter(&writer, output + 1, out_len_byte / 4 - 1);
         } else {
-            // 对于极小的输出缓冲区，仍然尝试初始化
+            //translated comment
             initBitWriter(&writer, output + 1, 1);
         }
     }
@@ -174,10 +174,10 @@ public:
             int setup_size = initLeadingRoundAndRepresentation() + 
                             initTrailingRoundAndRepresentation();
             if (setup_size == 0) {
-                // 设置失败，使用最小设置
-                leading_bits_per_value = 5;  // 默认值
+                //translated comment
+                leading_bits_per_value = 5;  //translated comment
                 trailing_bits_per_value = 5;
-                setup_size = 10;  // 估算值
+                setup_size = 10;  //translated comment
             }
             return setup_size + writeFirst(value);
         } else {
@@ -263,7 +263,7 @@ public:
         }
         
         if (len <= 1) {
-            // 单元素情况，设置默认分布
+            //translated comment
             leadDistribution[0] = 1;
             trailDistribution[0] = 1;
             return;
@@ -290,7 +290,7 @@ public:
         }
         
         if (!hasValidXor) {
-            // 如果没有有效的XOR，设置默认分布
+            //XOR，
             leadDistribution[0] = 1;
             trailDistribution[0] = 1;
         }
@@ -327,11 +327,11 @@ public:
 
     __device__ __forceinline__ size_t get_size_bytes() {
         size_t bytes = (size + 31) / 32 * 4;
-        return (bytes > 0) ? bytes : 4;  // 至少4字节
+        return (bytes > 0) ? bytes : 4;  //translated comment
     }
 };
 
-// 边界安全的压缩函数
+//translated comment
 __device__ size_t compress_method_edge_safe(
     const double* d_in_chunk, ssize_t in_len,
     uint8_t* d_out_chunk, ssize_t out_len_bytes,
@@ -398,7 +398,7 @@ __global__ void compress_kernel(const double* d_in_data,
     }
     
     // if (chunk_idx < 3) {
-    //     printf("块%d: %lld元素 -> %llu字节\n", 
+    //printf(" %d: %lld -> %llu \n",
     //            chunk_idx, (long long)in_chunk_len_elems, (unsigned long long)actual_compressed_size);
     // }
 }

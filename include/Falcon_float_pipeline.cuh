@@ -121,7 +121,7 @@ private:
         bool visualize);
 };
 
-// CUDA错误检查宏
+//CUDA
 #ifndef cudaCheckError_32
 #define cudaCheckError_32(ans) { gpuAssert_32((ans), __FILE__, __LINE__); }
 inline void gpuAssert_32(cudaError_t code, const char *file, int line, bool abort=true) {
@@ -132,5 +132,5 @@ inline void gpuAssert_32(cudaError_t code, const char *file, int line, bool abor
 }
 #endif
 
-// 清理资源函数
+//translated comment
 void cleanup_data_32(ProcessedData_32 &data);

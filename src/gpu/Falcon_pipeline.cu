@@ -506,11 +506,11 @@ PipelineAnalysis FalconPipeline::executeDecompressionPipelineImpl(
     
     // Optionally verify decompressed data
     if (visualize) {
-        for(int z=0,tmp=0,k=0;z<3;z++)//循环三次
+        for(int z=0,tmp=0,k=0;z<3;z++)//translated comment
         {   
-            for(size_t i=0,j=tmp;i<3;i++)//找到不等的然后输出，然后跳到下一个block
+            for(size_t i=0,j=tmp;i<3;i++)//， block
             {
-                while(decompData.oriData[j]==decompData.decData[j]&&j<processedElements)//找到不等的值
+                while(decompData.oriData[j]==decompData.decData[j]&&j<processedElements)//translated comment
                 {
                     j++;
                     if(j>=processedElements)
@@ -581,7 +581,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineNoPack(
 }
 
 
-// 压缩流水线内部实现
+//translated comment
 CompressionResult FalconPipeline::executeCompressionPipelineImpl_NoPack(
     ProcessedData &data,
     size_t chunkSize,
@@ -589,7 +589,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_NoPack(
     
     cudaDeviceSynchronize();
     
-    // 创建时间线记录事件
+    //translated comment
     cudaEvent_t global_start_event, global_end_event;
     cudaEventCreate(&global_start_event);
     cudaEventCreate(&global_end_event);
@@ -598,11 +598,11 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_NoPack(
     cudaEventCreate(&init_start_event);
     cudaEventCreate(&init_end_event);
     
-    // 初始化
+    //translated comment
     cudaDeviceSynchronize();
     cudaEventRecord(init_start_event);
     
-    // 计算总chunk数量
+    //chunk
     size_t totalChunks = (data.nbEle + chunkSize - 1) / chunkSize;
     if(totalChunks == 1) {
         chunkSize = data.nbEle;
@@ -610,12 +610,12 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_NoPack(
     
     printf("totalChunks: %zu\n", totalChunks);
     
-    // 主机侧内存分配
+    //translated comment
     unsigned int *locCmpSize;
     cudaCheckError(cudaHostAlloc((void**)&locCmpSize, 
         sizeof(unsigned int) * (totalChunks + 2), cudaHostAllocDefault));
     
-    // 设置保护值
+    //translated comment
     locCmpSize[0] = 0xDEADBEEF;
     locCmpSize[totalChunks + 1] = 0xCAFEBABE;
     
@@ -634,7 +634,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_NoPack(
     std::vector<size_t> chunkSizes(totalChunks);
     std::vector<size_t> chunkElementCountsVec(totalChunks);
     
-    // 创建流池和事件
+    //translated comment
     const int MAX_EVENTS_PER_TYPE = totalChunks + numStreams;
     
     cudaStream_t *streams = new cudaStream_t[numStreams];
@@ -652,7 +652,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_NoPack(
         cudaCheckError(cudaEventCreateWithFlags(&evData[i], cudaEventDisableTiming));
     }
     
-    // 为每个流分配固定设备缓冲
+    //translated comment
     double **d_in = new double*[numStreams];
     unsigned char **d_out = new unsigned char*[numStreams];
     
@@ -664,7 +664,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_NoPack(
     cudaEventRecord(init_end_event);
     cudaEventSynchronize(init_end_event);
     
-    // 主循环:轮询stream直到数据处理完
+    //: stream
     size_t processedEle = 0;
     int active = 0;
     size_t totalCmpSize = 0;
@@ -691,7 +691,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_NoPack(
                         
                         chunkElementCounts[chunkIDX[s]] = todo;
                         
-                        // 异步H→D拷贝
+                        //translated comment
                         cudaCheckError(cudaMemcpyAsync(
                             d_in[s],
                             data.oriData + processedEle,
@@ -699,7 +699,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_NoPack(
                             cudaMemcpyHostToDevice,
                             streams[s]));
                         
-                        // 调用压缩接口
+                        //translated comment
                         FalconCompressor::Falcon_compress_no_pack(
                             d_in[s],
                             d_out[s],
@@ -729,7 +729,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_NoPack(
                         unsigned int compressedBits = locCmpSize[idx + 1];
                         unsigned int compressedBytes = (compressedBits + 7) / 8;
                         
-                        // 异步D→H拷贝结果
+                        //translated comment
                         cudaCheckError(cudaMemcpyAsync(
                             data.cmpBytes + h_cmp_offset[idx],
                             d_out[s],
@@ -759,7 +759,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_NoPack(
             }
         }
         
-        // 避免忙等待
+        //translated comment
         if (!progress) {
             for (int i = 0; i < numStreams; i++) {
                 cudaCheckError(cudaStreamSynchronize(streams[i]));
@@ -767,7 +767,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_NoPack(
         }
     }
     
-    // 等待所有流完成
+    //translated comment
     for (int i = 0; i < std::min(numStreams, (int)totalChunks); i++) {
         cudaCheckError(cudaStreamSynchronize(streams[i]));
         cudaCheckError(cudaEventSynchronize(evData[i]));
@@ -776,14 +776,14 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_NoPack(
     cudaEventRecord(global_end_event);
     cudaEventSynchronize(global_end_event);
     
-    // 计算总时间
+    //translated comment
     float totalTime;
     cudaEventElapsedTime(&totalTime, global_start_event, global_end_event);
     
-    // 计算压缩比
+    //translated comment
     double compressionRatio = totalCmpSize / static_cast<double>(data.nbEle * sizeof(double));
     
-    // 创建分析结果
+    //translated comment
     PipelineAnalysis analysis;
     analysis.compression_ratio = compressionRatio;
     analysis.total_compressed_size = totalCmpSize;
@@ -794,13 +794,13 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_NoPack(
     analysis.chunk_size = chunkSize;
     *data.cmpSize = totalCmpSize;
     
-    // 清理设备内存
+    //translated comment
     for (int i = 0; i < numStreams; i++) {
         cudaCheckError(cudaFree(d_out[i]));
         cudaCheckError(cudaFree(d_in[i]));
     }
     
-    // 清理流和事件
+    //translated comment
     for (int i = 0; i < numStreams; i++) {
         cudaCheckError(cudaStreamDestroy(streams[i]));
     }
@@ -809,19 +809,19 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_NoPack(
         cudaCheckError(cudaEventDestroy(evData[i]));
     }
     
-    // 释放主机内存
+    //translated comment
     cudaCheckError(cudaFreeHost(locCmpSize));
     cudaCheckError(cudaFreeHost(h_cmp_offset));
     cudaCheckError(cudaFreeHost(chunkElementCounts));
     delete[] of_rd;
     
-    // 销毁全局事件
+    //translated comment
     cudaCheckError(cudaEventDestroy(global_start_event));
     cudaCheckError(cudaEventDestroy(global_end_event));
     cudaCheckError(cudaEventDestroy(init_start_event));
     cudaCheckError(cudaEventDestroy(init_end_event));
     
-    // 释放动态分配的数组
+    //translated comment
     delete[] streams;
     delete[] evSize;
     delete[] evData;
@@ -829,7 +829,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_NoPack(
     delete[] d_in;
     delete[] d_out;
     
-    // 创建并返回完整结果
+    //translated comment
     CompressionResult result;
     result.analysis = analysis;
     result.chunkSizes = std::move(chunkSizes);
@@ -849,7 +849,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineSpare(
     return executeCompressionPipelineImpl_Spare(data, chunkSize, NUM_STREAMS);
 }
 
-// 压缩流水线内部实现
+//translated comment
 CompressionResult FalconPipeline::executeCompressionPipelineImpl_Spare(
     ProcessedData &data,
     size_t chunkSize,
@@ -857,7 +857,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_Spare(
     
     cudaDeviceSynchronize();
     
-    // 创建时间线记录事件
+    //translated comment
     cudaEvent_t global_start_event, global_end_event;
     cudaEventCreate(&global_start_event);
     cudaEventCreate(&global_end_event);
@@ -866,11 +866,11 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_Spare(
     cudaEventCreate(&init_start_event);
     cudaEventCreate(&init_end_event);
     
-    // 初始化
+    //translated comment
     cudaDeviceSynchronize();
     cudaEventRecord(init_start_event);
     
-    // 计算总chunk数量
+    //chunk
     size_t totalChunks = (data.nbEle + chunkSize - 1) / chunkSize;
     if(totalChunks == 1) {
         chunkSize = data.nbEle;
@@ -878,12 +878,12 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_Spare(
     
     printf("totalChunks: %zu\n", totalChunks);
     
-    // 主机侧内存分配
+    //translated comment
     unsigned int *locCmpSize;
     cudaCheckError(cudaHostAlloc((void**)&locCmpSize, 
         sizeof(unsigned int) * (totalChunks + 2), cudaHostAllocDefault));
     
-    // 设置保护值
+    //translated comment
     locCmpSize[0] = 0xDEADBEEF;
     locCmpSize[totalChunks + 1] = 0xCAFEBABE;
     
@@ -902,7 +902,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_Spare(
     std::vector<size_t> chunkSizes(totalChunks);
     std::vector<size_t> chunkElementCountsVec(totalChunks);
     
-    // 创建流池和事件
+    //translated comment
     const int MAX_EVENTS_PER_TYPE = totalChunks + numStreams;
     
     cudaStream_t *streams = new cudaStream_t[numStreams];
@@ -920,7 +920,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_Spare(
         cudaCheckError(cudaEventCreateWithFlags(&evData[i], cudaEventDisableTiming));
     }
     
-    // 为每个流分配固定设备缓冲
+    //translated comment
     double **d_in = new double*[numStreams];
     unsigned char **d_out = new unsigned char*[numStreams];
     
@@ -932,7 +932,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_Spare(
     cudaEventRecord(init_end_event);
     cudaEventSynchronize(init_end_event);
     
-    // 主循环:轮询stream直到数据处理完
+    //: stream
     size_t processedEle = 0;
     int active = 0;
     size_t totalCmpSize = 0;
@@ -959,7 +959,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_Spare(
                         
                         chunkElementCounts[chunkIDX[s]] = todo;
                         
-                        // 异步H→D拷贝
+                        //translated comment
                         cudaCheckError(cudaMemcpyAsync(
                             d_in[s],
                             data.oriData + processedEle,
@@ -967,7 +967,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_Spare(
                             cudaMemcpyHostToDevice,
                             streams[s]));
                         
-                        // 调用压缩接口
+                        //translated comment
                         FalconCompressor::Falcon_compress_spare(
                             d_in[s],
                             d_out[s],
@@ -997,7 +997,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_Spare(
                         unsigned int compressedBits = locCmpSize[idx + 1];
                         unsigned int compressedBytes = (compressedBits + 7) / 8;
                         
-                        // 异步D→H拷贝结果
+                        //translated comment
                         cudaCheckError(cudaMemcpyAsync(
                             data.cmpBytes + h_cmp_offset[idx],
                             d_out[s],
@@ -1027,7 +1027,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_Spare(
             }
         }
         
-        // 避免忙等待
+        //translated comment
         if (!progress) {
             for (int i = 0; i < numStreams; i++) {
                 cudaCheckError(cudaStreamSynchronize(streams[i]));
@@ -1035,7 +1035,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_Spare(
         }
     }
     
-    // 等待所有流完成
+    //translated comment
     for (int i = 0; i < std::min(numStreams, (int)totalChunks); i++) {
         cudaCheckError(cudaStreamSynchronize(streams[i]));
         cudaCheckError(cudaEventSynchronize(evData[i]));
@@ -1044,14 +1044,14 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_Spare(
     cudaEventRecord(global_end_event);
     cudaEventSynchronize(global_end_event);
     
-    // 计算总时间
+    //translated comment
     float totalTime;
     cudaEventElapsedTime(&totalTime, global_start_event, global_end_event);
     
-    // 计算压缩比
+    //translated comment
     double compressionRatio = totalCmpSize / static_cast<double>(data.nbEle * sizeof(double));
     
-    // 创建分析结果
+    //translated comment
     PipelineAnalysis analysis;
     analysis.compression_ratio = compressionRatio;
     analysis.total_compressed_size = totalCmpSize;
@@ -1062,13 +1062,13 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_Spare(
     analysis.chunk_size = chunkSize;
     *data.cmpSize = totalCmpSize;
     
-    // 清理设备内存
+    //translated comment
     for (int i = 0; i < numStreams; i++) {
         cudaCheckError(cudaFree(d_out[i]));
         cudaCheckError(cudaFree(d_in[i]));
     }
     
-    // 清理流和事件
+    //translated comment
     for (int i = 0; i < numStreams; i++) {
         cudaCheckError(cudaStreamDestroy(streams[i]));
     }
@@ -1077,19 +1077,19 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_Spare(
         cudaCheckError(cudaEventDestroy(evData[i]));
     }
     
-    // 释放主机内存
+    //translated comment
     cudaCheckError(cudaFreeHost(locCmpSize));
     cudaCheckError(cudaFreeHost(h_cmp_offset));
     cudaCheckError(cudaFreeHost(chunkElementCounts));
     delete[] of_rd;
     
-    // 销毁全局事件
+    //translated comment
     cudaCheckError(cudaEventDestroy(global_start_event));
     cudaCheckError(cudaEventDestroy(global_end_event));
     cudaCheckError(cudaEventDestroy(init_start_event));
     cudaCheckError(cudaEventDestroy(init_end_event));
     
-    // 释放动态分配的数组
+    //translated comment
     delete[] streams;
     delete[] evSize;
     delete[] evData;
@@ -1097,7 +1097,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_Spare(
     delete[] d_in;
     delete[] d_out;
     
-    // 创建并返回完整结果
+    //translated comment
     CompressionResult result;
     result.analysis = analysis;
     result.chunkSizes = std::move(chunkSizes);
@@ -1117,7 +1117,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineBr(
     return executeCompressionPipelineImpl_Br(data, chunkSize, NUM_STREAMS);
 }
 
-// 压缩流水线内部实现
+//translated comment
 CompressionResult FalconPipeline::executeCompressionPipelineImpl_Br(
     ProcessedData &data,
     size_t chunkSize,
@@ -1125,7 +1125,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_Br(
     
     cudaDeviceSynchronize();
     
-    // 创建时间线记录事件
+    //translated comment
     cudaEvent_t global_start_event, global_end_event;
     cudaEventCreate(&global_start_event);
     cudaEventCreate(&global_end_event);
@@ -1134,11 +1134,11 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_Br(
     cudaEventCreate(&init_start_event);
     cudaEventCreate(&init_end_event);
     
-    // 初始化
+    //translated comment
     cudaDeviceSynchronize();
     cudaEventRecord(init_start_event);
     
-    // 计算总chunk数量
+    //chunk
     size_t totalChunks = (data.nbEle + chunkSize - 1) / chunkSize;
     if(totalChunks == 1) {
         chunkSize = data.nbEle;
@@ -1146,12 +1146,12 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_Br(
     
     printf("totalChunks: %zu\n", totalChunks);
     
-    // 主机侧内存分配
+    //translated comment
     unsigned int *locCmpSize;
     cudaCheckError(cudaHostAlloc((void**)&locCmpSize, 
         sizeof(unsigned int) * (totalChunks + 2), cudaHostAllocDefault));
     
-    // 设置保护值
+    //translated comment
     locCmpSize[0] = 0xDEADBEEF;
     locCmpSize[totalChunks + 1] = 0xCAFEBABE;
     
@@ -1170,7 +1170,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_Br(
     std::vector<size_t> chunkSizes(totalChunks);
     std::vector<size_t> chunkElementCountsVec(totalChunks);
     
-    // 创建流池和事件
+    //translated comment
     const int MAX_EVENTS_PER_TYPE = totalChunks + numStreams;
     
     cudaStream_t *streams = new cudaStream_t[numStreams];
@@ -1188,7 +1188,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_Br(
         cudaCheckError(cudaEventCreateWithFlags(&evData[i], cudaEventDisableTiming));
     }
     
-    // 为每个流分配固定设备缓冲
+    //translated comment
     double **d_in = new double*[numStreams];
     unsigned char **d_out = new unsigned char*[numStreams];
     
@@ -1200,7 +1200,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_Br(
     cudaEventRecord(init_end_event);
     cudaEventSynchronize(init_end_event);
     
-    // 主循环:轮询stream直到数据处理完
+    //: stream
     size_t processedEle = 0;
     int active = 0;
     size_t totalCmpSize = 0;
@@ -1227,7 +1227,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_Br(
                         
                         chunkElementCounts[chunkIDX[s]] = todo;
                         
-                        // 异步H→D拷贝
+                        //translated comment
                         cudaCheckError(cudaMemcpyAsync(
                             d_in[s],
                             data.oriData + processedEle,
@@ -1235,7 +1235,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_Br(
                             cudaMemcpyHostToDevice,
                             streams[s]));
                         
-                        // 调用压缩接口
+                        //translated comment
                         FalconCompressor::Falcon_compress_br(
                             d_in[s],
                             d_out[s],
@@ -1265,7 +1265,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_Br(
                         unsigned int compressedBits = locCmpSize[idx + 1];
                         unsigned int compressedBytes = (compressedBits + 7) / 8;
                         
-                        // 异步D→H拷贝结果
+                        //translated comment
                         cudaCheckError(cudaMemcpyAsync(
                             data.cmpBytes + h_cmp_offset[idx],
                             d_out[s],
@@ -1295,7 +1295,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_Br(
             }
         }
         
-        // 避免忙等待
+        //translated comment
         if (!progress) {
             for (int i = 0; i < numStreams; i++) {
                 cudaCheckError(cudaStreamSynchronize(streams[i]));
@@ -1303,7 +1303,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_Br(
         }
     }
     
-    // 等待所有流完成
+    //translated comment
     for (int i = 0; i < std::min(numStreams, (int)totalChunks); i++) {
         cudaCheckError(cudaStreamSynchronize(streams[i]));
         cudaCheckError(cudaEventSynchronize(evData[i]));
@@ -1312,14 +1312,14 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_Br(
     cudaEventRecord(global_end_event);
     cudaEventSynchronize(global_end_event);
     
-    // 计算总时间
+    //translated comment
     float totalTime;
     cudaEventElapsedTime(&totalTime, global_start_event, global_end_event);
     
-    // 计算压缩比
+    //translated comment
     double compressionRatio = totalCmpSize / static_cast<double>(data.nbEle * sizeof(double));
     
-    // 创建分析结果
+    //translated comment
     PipelineAnalysis analysis;
     analysis.compression_ratio = compressionRatio;
     analysis.total_compressed_size = totalCmpSize;
@@ -1330,13 +1330,13 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_Br(
     analysis.chunk_size = chunkSize;
     *data.cmpSize = totalCmpSize;
     
-    // 清理设备内存
+    //translated comment
     for (int i = 0; i < numStreams; i++) {
         cudaCheckError(cudaFree(d_out[i]));
         cudaCheckError(cudaFree(d_in[i]));
     }
     
-    // 清理流和事件
+    //translated comment
     for (int i = 0; i < numStreams; i++) {
         cudaCheckError(cudaStreamDestroy(streams[i]));
     }
@@ -1345,19 +1345,19 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_Br(
         cudaCheckError(cudaEventDestroy(evData[i]));
     }
     
-    // 释放主机内存
+    //translated comment
     cudaCheckError(cudaFreeHost(locCmpSize));
     cudaCheckError(cudaFreeHost(h_cmp_offset));
     cudaCheckError(cudaFreeHost(chunkElementCounts));
     delete[] of_rd;
     
-    // 销毁全局事件
+    //translated comment
     cudaCheckError(cudaEventDestroy(global_start_event));
     cudaCheckError(cudaEventDestroy(global_end_event));
     cudaCheckError(cudaEventDestroy(init_start_event));
     cudaCheckError(cudaEventDestroy(init_end_event));
     
-    // 释放动态分配的数组
+    //translated comment
     delete[] streams;
     delete[] evSize;
     delete[] evData;
@@ -1365,7 +1365,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_Br(
     delete[] d_in;
     delete[] d_out;
     
-    // 创建并返回完整结果
+    //translated comment
     CompressionResult result;
     result.analysis = analysis;
     result.chunkSizes = std::move(chunkSizes);
@@ -1375,69 +1375,69 @@ CompressionResult FalconPipeline::executeCompressionPipelineImpl_Br(
     return result;
 }
 
-// 流水线实验
+//translated comment
 
-// 阻塞
+//translated comment
 
 CompressionResult FalconPipeline::executeCompressionPipelineBlock(
     ProcessedData &data,
     size_t chunkSize) 
 {
-    cudaEvent_t global_start_event, global_end_event; //全局开始和结束事件
+    cudaEvent_t global_start_event, global_end_event; //translated comment
     cudaDeviceSynchronize();
-    // 创建时间线记录事件
+    //translated comment
     cudaEventCreate(&global_start_event);
     cudaEventCreate(&global_end_event);
-    //初始化
+    //translated comment
     cudaEvent_t init_start_event,init_end_event;
     cudaEventCreate(&init_start_event);
     cudaEventCreate(&init_end_event);
 
-    //初始化
-    cudaDeviceSynchronize();//测量前确保稳定
+    //translated comment
+    cudaDeviceSynchronize();//translated comment
     cudaEventRecord(init_start_event);
 
-    // 计算总chunk数量
+    //chunk
     size_t totalChunks = (data.nbEle + chunkSize - 1) / chunkSize;
     if(totalChunks==1)
     // if(1)
     {
         chunkSize=data.nbEle;
     }
-    // 主机侧内存分配
-    // 分配时添加保护
+    //translated comment
+    //translated comment
     unsigned int *locCmpSize;
     cudaCheckError(cudaHostAlloc((void**)&locCmpSize, 
     sizeof(unsigned int) * (totalChunks + 2), cudaHostAllocDefault));  // +2 for guards
 
-    // 设置保护值
-    locCmpSize[0] = 0xDEADBEEF;  // 前保护
-    locCmpSize[totalChunks + 1] = 0xCAFEBABE;  // 后保护
+    //translated comment
+    locCmpSize[0] = 0xDEADBEEF;  //translated comment
+    locCmpSize[totalChunks + 1] = 0xCAFEBABE;  //translated comment
 
 
     
     unsigned int *h_cmp_offset;
     cudaCheckError(cudaHostAlloc((void**)&h_cmp_offset, sizeof(unsigned int) * (totalChunks + 1), cudaHostAllocDefault));
-    // 初始化偏移量数组
+    //translated comment
     h_cmp_offset[0] = 0;
 
-    // 新增：记录每个chunk信息的数组
+    //： chunk
     size_t *chunkElementCounts;
     cudaCheckError(cudaHostAlloc((void**)&chunkElementCounts, sizeof(size_t) * totalChunks, cudaHostAllocDefault));
 
-    // 用于存储每个chunk的压缩信息
+    //chunk
 
     std::vector<size_t> chunkSizes(totalChunks);
     std::vector<size_t> chunkElementCountsVec(totalChunks);
 
-    // ---------- 创建流池和事件 ----------
-    const int MAX_EVENTS_PER_TYPE = totalChunks + NUM_STREAMS; // 预留一些额外的事件
+    //translated comment
+    const int MAX_EVENTS_PER_TYPE = totalChunks + NUM_STREAMS; //translated comment
     
     cudaStream_t streams[NUM_STREAMS];
-    cudaEvent_t kernal_start[MAX_EVENTS_PER_TYPE]; // 核函数启动
-    cudaEvent_t evSize[MAX_EVENTS_PER_TYPE]; // size 拷贝完成
-    cudaEvent_t evData[MAX_EVENTS_PER_TYPE]; // 数据拷贝完成
-    Stage stage[NUM_STREAMS]; // 每流状态
+    cudaEvent_t kernal_start[MAX_EVENTS_PER_TYPE]; //translated comment
+    cudaEvent_t evSize[MAX_EVENTS_PER_TYPE]; //size
+    cudaEvent_t evData[MAX_EVENTS_PER_TYPE]; //translated comment
+    Stage stage[NUM_STREAMS]; //translated comment
 
     for (int i = 0; i < NUM_STREAMS; ++i) {
         cudaCheckError(cudaStreamCreate(&streams[i]));
@@ -1451,7 +1451,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineBlock(
     }
 
 
-    // ---------- 为每个流分配固定设备缓冲 ----------
+    //translated comment
     double *d_in[NUM_STREAMS];
     unsigned char *d_out[NUM_STREAMS];
     for (int i = 0; i < NUM_STREAMS; ++i) {
@@ -1461,53 +1461,53 @@ CompressionResult FalconPipeline::executeCompressionPipelineBlock(
 
 
     cudaEventRecord(init_end_event);
-    // 等待所有操作完成
+    //translated comment
     cudaEventSynchronize(init_end_event);
 
-    // ---------- 主循环：轮叫 stream 直到数据处理完 ----------
-    size_t processedEle = 0; // 已完成元素数
+    //---------- ： stream ----------
+    size_t processedEle = 0; //translated comment
     int active = 0;
-    size_t totalCmpSize = 0; // 总压缩大小
-    size_t completedChunks = 0; // 已完成的chunk数量
-    // 记录全局开始时间
-    cudaDeviceSynchronize();//测量前确保稳定
+    size_t totalCmpSize = 0; //translated comment
+    size_t completedChunks = 0; //chunk
+    //translated comment
+    cudaDeviceSynchronize();//translated comment
     cudaEventRecord(global_start_event);
 
-    std::vector<int> chunkIDX(NUM_STREAMS);//和compINFO进行绑定
+    std::vector<int> chunkIDX(NUM_STREAMS);//compINFO
     while (processedEle < data.nbEle || active > 0) {
         int progress=0;
         for (int s = 0; s < NUM_STREAMS; ++s) {
             switch (stage[s]) {
                 case IDLE:
                     if (processedEle < data.nbEle) {
-                        // 计算本批次元素数
+                        //translated comment
                         size_t todo = std::min(chunkSize, data.nbEle - processedEle);
                         if(todo==0)
                         {
                             continue;
                         }
                         progress=1;
-                        chunkIDX[s]=completedChunks;//记录当前处理的chunks
+                        chunkIDX[s]=completedChunks;//chunks
                         completedChunks++;
-                        // 记录当前流处理的元素数量
+                        //translated comment
                         chunkElementCounts[chunkIDX[s]] = todo;
 
-                        // 异步 H→D 拷贝
+                        //translated comment
                         cudaCheckError(cudaMemcpyAsync(
                             d_in[s],
                             data.oriData + processedEle,
-                            todo * sizeof(double), // 修正：使用实际元素数
+                            todo * sizeof(double), //translated comment
                             cudaMemcpyHostToDevice,
                             streams[s]));
-                        // 调用压缩接口（内部处理所有临时内存）
+                        //translated comment
                         FalconCompressor::Falcon_compress_stream(
                             d_in[s],
                             d_out[s],
-                            &locCmpSize[chunkIDX[s] + 1],  // +1 因为有前保护
+                            &locCmpSize[chunkIDX[s] + 1],  //translated comment
                             todo,
                             streams[s]);
 
-                        // 记录尺寸事件
+                        //translated comment
                         active += 1;
                         processedEle += todo;
                           
@@ -1516,18 +1516,18 @@ CompressionResult FalconPipeline::executeCompressionPipelineBlock(
 
                         int idx=chunkIDX[s];
                         // printf("idx: %d,stream: %d SIZE\n",idx,s);
-                        unsigned int compressedBits = locCmpSize[idx+1];//因为有前缀保护
+                        unsigned int compressedBits = locCmpSize[idx+1];//translated comment
                         unsigned int compressedBytes = (compressedBits + 7) / 8;
 
-                        // 异步 D→H 拷贝结果
+                        //translated comment
                         cudaCheckError(cudaMemcpyAsync(
                             data.cmpBytes + h_cmp_offset[idx],
                             d_out[s],
-                            compressedBytes,// 使用实际压缩大小
+                            compressedBytes,//translated comment
                             cudaMemcpyDeviceToHost,
                             streams[s]));
 
-                        // 更新偏移量
+                        //translated comment
                         h_cmp_offset[idx + 1] = h_cmp_offset[idx] + compressedBytes;
                         chunkSizes[idx] = compressedBytes;
                         chunkElementCountsVec[idx] = chunkElementCounts[idx];
@@ -1539,7 +1539,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineBlock(
 
             }
         }
-        // 避免忙等待 - 如果没有进展，短暂休眠
+        //translated comment
         if (!progress) {
             for (int i = 0; i < NUM_STREAMS; i++) {
                 cudaCheckError(cudaStreamSynchronize(streams[i]));
@@ -1547,12 +1547,12 @@ CompressionResult FalconPipeline::executeCompressionPipelineBlock(
         }
     }
 
-    // 等待所有流完成
+    //translated comment
     for (int i = 0; i < (NUM_STREAMS>totalChunks?totalChunks:NUM_STREAMS); i++) {
         cudaCheckError(cudaStreamSynchronize(streams[i]));
         // cudaCheckError(cudaEventSynchronize(evData[i]));
     }
-    //     // 分配临时缓冲区
+    //translated comment
     // unsigned char* tempBuffer = new unsigned char[totalCmpSize];
 
     // size_t off = 0;
@@ -1571,24 +1571,24 @@ CompressionResult FalconPipeline::executeCompressionPipelineBlock(
     // {
     //     printf("wrong\n");
     // }
-    // // 拷贝回原缓冲区
+    //translated comment
     // memcpy(data.cmpBytes, tempBuffer, totalCmpSize);
     // delete[] tempBuffer;
-    // 记录全局结束时间
+    //translated comment
     cudaEventRecord(global_end_event);
 
-    // 等待所有操作完成
+    //translated comment
     cudaEventSynchronize(global_end_event);
   
-    // 计算总时间
+    //translated comment
     float totalTime;
     cudaEventElapsedTime(&totalTime, global_start_event, global_end_event);
     float initTime;
     cudaEventElapsedTime(&initTime, init_start_event, init_end_event);
-    // 计算压缩比
+    //translated comment
     double compressionRatio =totalCmpSize/static_cast<double>(data.nbEle * sizeof(double)) ;
 
-    // 创建分析结果
+    //translated comment
     PipelineAnalysis analysis;
     analysis.compression_ratio = compressionRatio;
     analysis.total_compressed_size = totalCmpSize;
@@ -1598,14 +1598,14 @@ CompressionResult FalconPipeline::executeCompressionPipelineBlock(
     analysis.chunk_size = chunkSize;
     *data.cmpSize=totalCmpSize;
 
-    // ---------- 清理资源 ----------
-    // 清理设备内存
+    //translated comment
+    //translated comment
     for (int i = 0; i < NUM_STREAMS; i++) {
         cudaCheckError(cudaFree(d_out[i]));
         cudaCheckError(cudaFree(d_in[i]));
     }
 
-    // 清理流和事件
+    //translated comment
     for (int i = 0; i < NUM_STREAMS; i++) {
         cudaCheckError(cudaStreamDestroy(streams[i]));
     }
@@ -1614,16 +1614,16 @@ CompressionResult FalconPipeline::executeCompressionPipelineBlock(
         cudaCheckError(cudaEventDestroy(evData[i]));
     }
 
-    // 释放主机内存
+    //translated comment
     cudaCheckError(cudaFreeHost(locCmpSize));
     cudaCheckError(cudaFreeHost(h_cmp_offset));
     cudaCheckError(cudaFreeHost(chunkElementCounts));
 
-    // 销毁全局事件
+    //translated comment
     cudaCheckError(cudaEventDestroy(global_start_event));
     cudaCheckError(cudaEventDestroy(global_end_event));
 
-    // 创建并返回完整结果
+    //translated comment
     CompressionResult result;
     result.analysis = analysis;
     result.chunkSizes = std::move(chunkSizes);
@@ -1632,65 +1632,65 @@ CompressionResult FalconPipeline::executeCompressionPipelineBlock(
     return result;
 }
 
-//非阻塞
+//translated comment
 
 CompressionResult FalconPipeline::executeCompressionPipelineNoBlock(
     ProcessedData &data,
     size_t chunkSize) 
 {
-    cudaEvent_t global_start_event, global_end_event; //全局开始和结束事件
+    cudaEvent_t global_start_event, global_end_event; //translated comment
     cudaDeviceSynchronize();
-    // 创建时间线记录事件
+    //translated comment
     cudaEventCreate(&global_start_event);
     cudaEventCreate(&global_end_event);
-    //初始化
+    //translated comment
     cudaEvent_t init_start_event,init_end_event;
     cudaEventCreate(&init_start_event);
     cudaEventCreate(&init_end_event);
 
-    //初始化
-    cudaDeviceSynchronize();//测量前确保稳定
+    //translated comment
+    cudaDeviceSynchronize();//translated comment
     cudaEventRecord(init_start_event);
 
-    // 计算总chunk数量
+    //chunk
     size_t totalChunks = (data.nbEle + chunkSize - 1) / chunkSize;
     if(totalChunks==1)
     {
         chunkSize=data.nbEle;
     }
-    // 主机侧内存分配
-    // 分配时添加保护
+    //translated comment
+    //translated comment
     unsigned int *locCmpSize;
     cudaCheckError(cudaHostAlloc((void**)&locCmpSize, 
     sizeof(unsigned int) * (totalChunks + 2), cudaHostAllocDefault));  // +2 for guards
 
-    // 设置保护值
-    locCmpSize[0] = 0xDEADBEEF;  // 前保护
-    locCmpSize[totalChunks + 1] = 0xCAFEBABE;  // 后保护
+    //translated comment
+    locCmpSize[0] = 0xDEADBEEF;  //translated comment
+    locCmpSize[totalChunks + 1] = 0xCAFEBABE;  //translated comment
 
 
     
     unsigned int *h_cmp_offset;
     cudaCheckError(cudaHostAlloc((void**)&h_cmp_offset, sizeof(unsigned int) * (totalChunks + 1), cudaHostAllocDefault));
-    // 初始化偏移量数组
+    //translated comment
     h_cmp_offset[0] = 0;
-    // 新增：记录每个chunk信息的数组
+    //： chunk
     size_t *chunkElementCounts;
     cudaCheckError(cudaHostAlloc((void**)&chunkElementCounts, sizeof(size_t) * totalChunks, cudaHostAllocDefault));
 
-    // 用于存储每个chunk的压缩信息
+    //chunk
 
     std::vector<size_t> chunkSizes(totalChunks);
     std::vector<size_t> chunkElementCountsVec(totalChunks);
 
-    // ---------- 创建流池和事件 ----------
-    const int MAX_EVENTS_PER_TYPE = totalChunks + NUM_STREAMS; // 预留一些额外的事件
+    //translated comment
+    const int MAX_EVENTS_PER_TYPE = totalChunks + NUM_STREAMS; //translated comment
     
     cudaStream_t streams[NUM_STREAMS];
-    cudaEvent_t kernal_start[MAX_EVENTS_PER_TYPE]; // 核函数启动
-    cudaEvent_t evSize[MAX_EVENTS_PER_TYPE]; // size 拷贝完成
-    cudaEvent_t evData[MAX_EVENTS_PER_TYPE]; // 数据拷贝完成
-    Stage stage[NUM_STREAMS]; // 每流状态
+    cudaEvent_t kernal_start[MAX_EVENTS_PER_TYPE]; //translated comment
+    cudaEvent_t evSize[MAX_EVENTS_PER_TYPE]; //size
+    cudaEvent_t evData[MAX_EVENTS_PER_TYPE]; //translated comment
+    Stage stage[NUM_STREAMS]; //translated comment
 
     for (int i = 0; i < NUM_STREAMS; ++i) {
         cudaCheckError(cudaStreamCreate(&streams[i]));
@@ -1704,7 +1704,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineNoBlock(
     }
 
 
-    // ---------- 为每个流分配固定设备缓冲 ----------
+    //translated comment
     double *d_in[NUM_STREAMS];
     unsigned char *d_out[NUM_STREAMS];
     for (int i = 0; i < NUM_STREAMS; ++i) {
@@ -1714,53 +1714,53 @@ CompressionResult FalconPipeline::executeCompressionPipelineNoBlock(
 
 
     cudaEventRecord(init_end_event);
-    // 等待所有操作完成
+    //translated comment
     cudaEventSynchronize(init_end_event);
 
-    // ---------- 主循环：轮叫 stream 直到数据处理完 ----------
-    size_t processedEle = 0; // 已完成元素数
+    //---------- ： stream ----------
+    size_t processedEle = 0; //translated comment
     int active = 0;
-    size_t totalCmpSize = 0; // 总压缩大小
-    size_t completedChunks = 0; // 已完成的chunk数量
-    // 记录全局开始时间
-    cudaDeviceSynchronize();//测量前确保稳定
+    size_t totalCmpSize = 0; //translated comment
+    size_t completedChunks = 0; //chunk
+    //translated comment
+    cudaDeviceSynchronize();//translated comment
     cudaEventRecord(global_start_event);
 
-    std::vector<int> chunkIDX(NUM_STREAMS);//和compINFO进行绑定
+    std::vector<int> chunkIDX(NUM_STREAMS);//compINFO
     while (processedEle < data.nbEle || active > 0) {
         int progress=0;
         for (int s = 0; s < NUM_STREAMS; ++s) {
             switch (stage[s]) {
                 case IDLE:
                     if (processedEle < data.nbEle) {
-                        // 计算本批次元素数
+                        //translated comment
                         size_t todo = std::min(chunkSize, data.nbEle - processedEle);
                         if(todo==0)
                         {
                             continue;
                         }
                         progress=1;
-                        chunkIDX[s]=completedChunks;//记录当前处理的chunks
+                        chunkIDX[s]=completedChunks;//chunks
                         completedChunks++;
-                        // 记录当前流处理的元素数量
+                        //translated comment
                         chunkElementCounts[chunkIDX[s]] = todo;
 
-                        // 异步 H→D 拷贝
+                        //translated comment
                         cudaCheckError(cudaMemcpyAsync(
                             d_in[s],
                             data.oriData + processedEle,
-                            todo * sizeof(double), // 修正：使用实际元素数
+                            todo * sizeof(double), //translated comment
                             cudaMemcpyHostToDevice,
                             streams[s]));
-                        // 调用压缩接口（内部处理所有临时内存）
+                        //translated comment
                         FalconCompressor::Falcon_compress_stream(
                             d_in[s],
                             d_out[s],
-                            &locCmpSize[chunkIDX[s] + 1],  // +1 因为有前保护
+                            &locCmpSize[chunkIDX[s] + 1],  //translated comment
                             todo,
                             streams[s]);
 
-                        // 记录尺寸事件
+                        //translated comment
                         active += 1;
                         processedEle += todo;
                           
@@ -1769,27 +1769,27 @@ CompressionResult FalconPipeline::executeCompressionPipelineNoBlock(
                     }
                     break;
                 case SIZE_PENDING:
-                    // 查询尺寸已拷回？&& 偏移已经准备好
+                    //translated comment
                     if(cudaEventQuery(evSize[chunkIDX[s]]) == cudaSuccess ) {
                         if (locCmpSize[0] != 0xDEADBEEF || locCmpSize[totalChunks + 1] != 0xCAFEBABE) {
                             printf("错误：内存保护值被覆写！\n");
                         }
                         progress=1;
-                        // 计算压缩后的字节大小
+                        //translated comment
                         int idx=chunkIDX[s];
                         // printf("idx: %d,stream: %d SIZE\n",idx,s);
-                        unsigned int compressedBits = locCmpSize[idx+1];//因为有前缀保护
+                        unsigned int compressedBits = locCmpSize[idx+1];//translated comment
                         unsigned int compressedBytes = (compressedBits + 7) / 8;
 
-                        // 异步 D→H 拷贝结果
+                        //translated comment
                         cudaCheckError(cudaMemcpyAsync(
                             data.cmpBytes + idx * chunkSize * sizeof(double),
                             d_out[s],
-                            chunkElementCounts[chunkIDX[s]]  * sizeof(double),// 使用实际压缩大小
+                            chunkElementCounts[chunkIDX[s]]  * sizeof(double),//translated comment
                             cudaMemcpyDeviceToHost,
                             streams[s]));
 
-                        // 更新偏移量
+                        //translated comment
                         chunkSizes[idx] = compressedBytes;
                         chunkElementCountsVec[idx] = chunkElementCounts[idx];
                         cudaCheckError(cudaEventRecord(evData[chunkIDX[s]], streams[s]));
@@ -1799,8 +1799,8 @@ CompressionResult FalconPipeline::executeCompressionPipelineNoBlock(
 
                 case DATA_PENDING:
                     if (cudaEventQuery(evData[chunkIDX[s]]) == cudaSuccess) {
-                        // 累计压缩大小
-                        unsigned int compressedBytes = (locCmpSize[chunkIDX[s]+1] + 7) / 8;//+1因为有前缀保护
+                        //translated comment
+                        unsigned int compressedBytes = (locCmpSize[chunkIDX[s]+1] + 7) / 8;//translated comment
                         totalCmpSize += compressedBytes;
                         progress=1;
                         stage[s] = IDLE;
@@ -1809,7 +1809,7 @@ CompressionResult FalconPipeline::executeCompressionPipelineNoBlock(
                     break;
             }
         }
-        // 避免忙等待 - 如果没有进展，短暂休眠
+        //translated comment
         if (!progress) {
             for (int i = 0; i < NUM_STREAMS; i++) {
                 cudaCheckError(cudaStreamSynchronize(streams[i]));
@@ -1817,13 +1817,13 @@ CompressionResult FalconPipeline::executeCompressionPipelineNoBlock(
         }
     }
 
-    // 等待所有流完成
+    //translated comment
     for (int i = 0; i < (NUM_STREAMS>totalChunks?totalChunks:NUM_STREAMS); i++) {
         cudaCheckError(cudaStreamSynchronize(streams[i]));
         cudaCheckError(cudaEventSynchronize(evData[i]));
     }
 
-    // 分配临时缓冲区
+    //translated comment
     unsigned char* tempBuffer = new unsigned char[totalCmpSize];
 
     size_t off = 0;
@@ -1842,26 +1842,26 @@ CompressionResult FalconPipeline::executeCompressionPipelineNoBlock(
     {
         printf("wrong\n");
     }
-    // 拷贝回原缓冲区
+    //translated comment
     memcpy(data.cmpBytes, tempBuffer, totalCmpSize);
     delete[] tempBuffer;
 
 
-    // 记录全局结束时间
+    //translated comment
     cudaEventRecord(global_end_event);
 
-    // 等待所有操作完成
+    //translated comment
     cudaEventSynchronize(global_end_event);
 
-    // 计算总时间
+    //translated comment
     float totalTime;
     cudaEventElapsedTime(&totalTime, global_start_event, global_end_event);
     float initTime;
     cudaEventElapsedTime(&initTime, init_start_event, init_end_event);
-    // 计算压缩比
+    //translated comment
     double compressionRatio =totalCmpSize/static_cast<double>(data.nbEle * sizeof(double)) ;
 
-    // 创建分析结果
+    //translated comment
     PipelineAnalysis analysis;
     analysis.compression_ratio = compressionRatio;
     analysis.total_compressed_size = totalCmpSize;
@@ -1871,14 +1871,14 @@ CompressionResult FalconPipeline::executeCompressionPipelineNoBlock(
     analysis.chunk_size = chunkSize;
     *data.cmpSize=totalCmpSize;
 
-    // ---------- 清理资源 ----------
-    // 清理设备内存
+    //translated comment
+    //translated comment
     for (int i = 0; i < NUM_STREAMS; i++) {
         cudaCheckError(cudaFree(d_out[i]));
         cudaCheckError(cudaFree(d_in[i]));
     }
 
-    // 清理流和事件
+    //translated comment
     for (int i = 0; i < NUM_STREAMS; i++) {
         cudaCheckError(cudaStreamDestroy(streams[i]));
     }
@@ -1887,16 +1887,16 @@ CompressionResult FalconPipeline::executeCompressionPipelineNoBlock(
         cudaCheckError(cudaEventDestroy(evData[i]));
     }
 
-    // 释放主机内存
+    //translated comment
     cudaCheckError(cudaFreeHost(locCmpSize));
     cudaCheckError(cudaFreeHost(h_cmp_offset));
     cudaCheckError(cudaFreeHost(chunkElementCounts));
 
-    // 销毁全局事件
+    //translated comment
     cudaCheckError(cudaEventDestroy(global_start_event));
     cudaCheckError(cudaEventDestroy(global_end_event));
 
-    // 创建并返回完整结果
+    //translated comment
     CompressionResult result;
     result.analysis = analysis;
     result.chunkSizes = std::move(chunkSizes);

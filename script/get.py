@@ -8,13 +8,13 @@ import pandas as pd
 
 
 DATA_PATTERNS = [
-    # 匹配: [Gorilla] 正在处理文件: "SM(Sim-Memory).csv" 或 [Chimp] 正在处理文件: "SM(Sim-Memory).csv"
+    #: [Gorilla] : "SM(Sim-Memory).csv" [Chimp] : "SM(Sim-Memory).csv"
     re.compile(r'正在处理文件[:： ]+\s*"([^"]+\.csv[^\"]*)"'),
-    # 匹配: 文件: ../test/data/use/AP(Air-pressure).csv (不带引号)
+    #: : ../test/data/use/AP(Air-pressure).csv ( )
     re.compile(r'文件[:：]\s*([^\s]+\.csv[^\s]*)'),
-    # 匹配: 文件: "path/to/file.csv" (带引号)
+    #: : "path/to/file.csv" ( )
     re.compile(r'文件[:：]?\s*"([^"]+\.csv[^\"]*)"'),
-    # 匹配: Processing file: path/to/file.csv
+    #: Processing file: path/to/file.csv
     re.compile(r'Processing file[:： ]+\s*(.+?\.csv[^\s]*)'),
 ]
 
@@ -73,15 +73,15 @@ def parse_log_file(file_path: Path, display_method: str, data_store):
             j = i + 1
             while j < len(lines):
                 next_line = lines[j]
-                # 检测新文件开始
+                #translated comment
                 if detect_dataset(next_line):
                     break
-                # 检测新文件开始的其他格式
+                #translated comment
                 if 'Processing file' in next_line or '正在处理文件' in next_line or next_line.strip().startswith('文件:'):
                     break
-                # 检测分隔线（可能表示新块开始）
+                #translated comment
                 if next_line.strip().startswith('---') or next_line.strip().startswith('==='):
-                    # 检查分隔线后是否还有数据，如果没有则停止
+                    #translated comment
                     if j + 1 < len(lines) and (detect_dataset(lines[j + 1]) or '压缩信息' not in lines[j + 1]):
                         block_lines.append(next_line)
                         j += 1
@@ -180,95 +180,95 @@ def parse_log_files(log_dir: Path):
         print(f"方法 '{method}': {avg_ratio:.4f}")
     return data
     
-    # 2. 计算每种方法下压缩率的平均值
-    # 创建一个空字典来存储结果
+    #translated comment
+    #translated comment
     avg_ratio_per_method = {}
 
-    # 定位到存储压缩率的字典
+    #translated comment
     compression_ratios = data['compression_ratio']
 
-    # 遍历每种方法 (method_name) 及其对应的数据集字典 (dataset_dict)
+    #(method_name) (dataset_dict)
     for method_name, dataset_dict in compression_ratios.items():
         
-        # 获取该方法下所有数据集的压缩率值
-        # dataset_dict.values() 会返回一个包含所有压缩率值的视图
+        #translated comment
+        #dataset_dict.values()
         values = list(dataset_dict.values())
         
-        # 安全检查：确保列表不为空
+        #translated comment
         if values:
-            # 计算平均值
+            #translated comment
             average_ratio = sum(values) / len(values)
-            # 存储结果
+            #translated comment
             avg_ratio_per_method[method_name] = average_ratio
         else:
             avg_ratio_per_method[method_name] = 0
 
-    # 3. 打印最终结果
+    #translated comment
     print("不同方法的平均压缩率:")
     for method, avg_ratio in avg_ratio_per_method.items():
         print(f"方法 '{method}': {avg_ratio:.4f}")
     return data
 
 # def create_combined_csv_report(data, output_file):
-#     # 定义数据集顺序（从实际数据中获取所有唯一数据集）
+#translated comment
 #     all_datasets = set()
 #     for metric in data.values():
 #         for method_data in metric.values():
 #             all_datasets.update(method_data.keys())
 #     datasets = sorted(all_datasets)
     
-#     # 定义方法顺序
+#translated comment
 #     methods = ['CPU:ALP', 'nvcomp::bitcomp', 'elf', 'nvcomp::gdf', 
 #                'nvcomp::LZ4', 'ndzip', 'nvcomp::Snappy']
     
-#     # 定义指标顺序和显示名称
+#translated comment
 #     metrics = [
-#         ('compression_ratio', '压缩率实验'),
-#         ('kernel_compress_time', '压缩时间（核函数）'),
-#         ('kernel_decompress_time', '核函数解压时间'),
-#         ('total_compress_time', '压缩时间'),
-#         ('total_decompress_time', '解压时间'),
-#         ('compress_throughput', '压缩吞吐量'),
-#         ('decompress_throughput', '解压吞吐量')
+#('compression_ratio', ' '),
+#('kernel_compress_time', ' （ ）'),
+#('kernel_decompress_time', ' '),
+#('total_compress_time', ' '),
+#('total_decompress_time', ' '),
+#('compress_throughput', ' '),
+#('decompress_throughput', ' ')
 #     ]
     
-#     # 创建DataFrame列表
+## DataFrame
 #     dfs = []
     
-#     # 为每种指标创建表格
+#translated comment
 #     for metric_key, metric_name in metrics:
-#         # 创建DataFrame
+## DataFrame
 #         df = pd.DataFrame(index=methods, columns=datasets)
         
-#         # 填充数据
+#translated comment
 #         for method in methods:
 #             for dataset in datasets:
 #                 if method in data[metric_key] and dataset in data[metric_key][method]:
 #                     df.at[method, dataset] = data[metric_key][method][dataset]
         
-#         # 添加标题行
-#         df.columns.name = '数据集名称'
+#translated comment
+#df.columns.name = ' '
 #         df.index.name = metric_name
         
-#         # 添加到列表
+#translated comment
 #         dfs.append(df)
     
-#     # 合并所有DataFrame
+## DataFrame
 #     combined_df = pd.concat(dfs)
     
-#     # 保存为CSV
+## CSV
 #     combined_df.to_csv(output_file, encoding='utf-8-sig')
-#     print(f"整合报告已生成: {output_file}")
+#print(f" : {output_file}")
 
 def create_combined_csv_report(data, output_file):
-    # 定义数据集顺序（从实际数据中获取所有唯一数据集）
+    #translated comment
     all_datasets = set()
     for metric in data.values():
         for method_data in metric.values():
             all_datasets.update(method_data.keys())
     datasets = sorted(all_datasets)
     
-    # 定义方法顺序
+    #translated comment
     methods = [
         "FALCON-g",
         "FALCON-g-nopack",
@@ -299,7 +299,7 @@ def create_combined_csv_report(data, output_file):
         "GPU:bitcomp",
     ]
     
-    # 定义指标顺序和显示名称
+    #translated comment
     metrics = [
         ('compression_ratio', '压缩率实验'),
         ('kernel_compress_time', '核函数压缩时间'),
@@ -310,16 +310,16 @@ def create_combined_csv_report(data, output_file):
         ('decompress_throughput', '解压吞吐量')
     ]
     
-    # 准备写入CSV的行数据
+    #CSV
     csv_rows = []
     
-    # 为每种指标创建表格
+    #translated comment
     for metric_key, metric_name in metrics:
-        # 添加指标标题行
+        #translated comment
         csv_rows.append([f"=== {metric_name} ==="])
-        csv_rows.append([""] + datasets)  # 列标题行
+        csv_rows.append([""] + datasets)  #translated comment
         
-        # 添加数据行
+        #translated comment
         for method in methods:
             row = [method]
             for dataset in datasets:
@@ -329,10 +329,10 @@ def create_combined_csv_report(data, output_file):
                 row.append(str(value) if value != "" else "")
             csv_rows.append(row)
         
-        # 添加空行分隔
+        #translated comment
         csv_rows.append([])
     
-    # 写入CSV文件
+    #CSV
     with open(output_file, 'w', encoding='utf-8-sig', newline='') as f:
         writer = csv.writer(f)
         writer.writerows(csv_rows)
@@ -341,7 +341,7 @@ def create_combined_csv_report(data, output_file):
 
 if __name__ == "__main__":
     script_dir = Path(__file__).resolve().parent
-    log_directory = script_dir  # 默认使用脚本所在目录
+    log_directory = script_dir  #translated comment
     output_csv = script_dir / 'compression_combined_report_all_old.csv'
 
     parsed_data = parse_log_files(log_directory)

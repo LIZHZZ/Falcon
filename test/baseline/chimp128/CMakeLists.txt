@@ -18,5 +18,5 @@ file(GLOB_RECURSE LIB_SRC *.cc)
 
 add_library(chimp STATIC ${LIB_SRC})
 
-# chimp128 不依赖额外三方，去掉无效依赖
+# chimp128 ，
 target_link_libraries(chimp)

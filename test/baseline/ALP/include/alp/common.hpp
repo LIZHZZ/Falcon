@@ -17,7 +17,7 @@ using factor_idx_t = uint8_t;
 //! exponent idx type
 using exponent_idx_t = uint8_t;
 
-// ALP记录系统 - 全局变量和函数
+//ALP -
 inline std::vector<std::pair<uint8_t, uint8_t>>& get_vector_ef_records() {
     static std::vector<std::pair<uint8_t, uint8_t>> records;
     return records;
@@ -33,7 +33,7 @@ inline bool& get_recording_enabled() {
     return enabled;
 }
 
-// 记录函数
+//translated comment
 inline void record_vector_ef(uint8_t e, uint8_t f) {
     if (get_recording_enabled()) {
         get_vector_ef_records().emplace_back(e, f);
@@ -46,7 +46,7 @@ inline void record_rowgroup_combinations(const std::vector<std::pair<std::pair<i
     }
 }
 
-// 控制函数
+//translated comment
 inline void enable_alp_recording(bool enable = true) {
     get_recording_enabled() = enable;
 }

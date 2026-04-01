@@ -15,9 +15,9 @@
 namespace fs = std::filesystem;
 
 std::string title = "";
-int NUM_STREAM=16; // 使用16个CUDA Stream实现流水线
-// #define NUM_STREAMS 16 // 使用16个CUDA Stream实现流水线
-// 生成随机数据的函数
+int NUM_STREAM=16; //16 CUDA Stream
+//#define NUM_STREAMS 16 // 16 CUDA Stream
+//translated comment
 std::vector<double> generate_test_data(size_t nbEle, int pattern_type = 0) {
     std::vector<double> data(nbEle);
 
@@ -26,7 +26,7 @@ std::vector<double> generate_test_data(size_t nbEle, int pattern_type = 0) {
 
     switch (pattern_type) {
         case 0: {
-            // 随机数据
+            //translated comment
             std::uniform_real_distribution<double> dist(-1000.0, 1000.0);
             for (size_t i = 0; i < nbEle; ++i) {
                 data[i] = dist(gen);
@@ -34,21 +34,21 @@ std::vector<double> generate_test_data(size_t nbEle, int pattern_type = 0) {
             break;
         }
         case 1: {
-            // 线性增长数据
+            //translated comment
             for (size_t i = 0; i < nbEle; ++i) {
                 data[i] = static_cast<double>(i) * 0.01;
             }
             break;
         }
         case 2: {
-            // 正弦波数据
+            //translated comment
             for (size_t i = 0; i < nbEle; ++i) {
                 data[i] = 1000.0 * sin(0.01 * i);
             }
             break;
         }
         case 3: {
-            // 多步阶数据
+            //translated comment
             int step_size = nbEle / 10;
             for (size_t i = 0; i < nbEle; ++i) {
                 data[i] = static_cast<double>((i / step_size) * 100);
@@ -68,20 +68,20 @@ std::vector<double> generate_test_data(size_t nbEle, int pattern_type = 0) {
 
 
 CompressionInfo test_compression(ProcessedData data, size_t chunkSize);
-// 准备数据函数，支持文件和生成数据两种模式
+//translated comment
 ProcessedData prepare_data(const std::string &source_path = "", size_t generate_size = 0, int pattern_type = 0,int fig=-1) {
     ProcessedData result;
     std::vector<double> data;
 
-    // 决定数据来源
+    //translated comment
     if (generate_size > 0) {
-        // 生成指定大小的数据
-        // printf("生成 %zu 个元素的测试数据 (模式: %d)\n", generate_size, pattern_type);
+        //translated comment
+        //printf(" %zu ( : %d)\n", generate_size, pattern_type);
         data = generate_test_data(generate_size, pattern_type);
         result.nbEle = generate_size;
     } else if (!source_path.empty()) {
-        // 从文件读取数据
-        // printf("从文件加载数据: %s\n", source_path.c_str());
+        //translated comment
+        //printf(" : %s\n", source_path.c_str());
         data = read_data(source_path,fig);
         result.nbEle = data.size();
     } else {
@@ -95,12 +95,12 @@ ProcessedData prepare_data(const std::string &source_path = "", size_t generate_
     {
         printf("wrong");
     }
-    // 分配固定内存
+    //translated comment
     cudaCheckError(cudaHostAlloc(&result.oriData, result.nbEle * sizeof(double), cudaHostAllocDefault));
     cudaCheckError(cudaHostAlloc((void**)&result.cmpBytes, result.nbEle * sizeof(double), cudaHostAllocDefault));
     cudaCheckError(cudaHostAlloc((void**)&result.cmpSize, sizeof(unsigned int), cudaHostAllocDefault));
     cudaCheckError(cudaHostAlloc(&result.decData, result.nbEle * sizeof(double), cudaHostAllocDefault));
-    // 将数据拷贝到固定内存
+    //translated comment
 #pragma omp parallel for
     for (size_t i = 0; i < result.nbEle; ++i) {
         result.oriData[i] = data[i];
@@ -159,17 +159,17 @@ CompressionInfo test_compression(ProcessedData data, size_t chunkSize)
         decompAnalysis.decomp_throughout};
 }
 
-// 从文件测试多个块大小
+//translated comment
 int test_multiple_blocksizes(const std::string &file_path, const std::vector<size_t> &block_sizes_kb)
 {
     printf("=================================================\n");
     printf("=====Testing Block Sizes : %d muti streams ======\n", NUM_STREAM);
     printf("=================================================\n");
 
-    // 对每个块大小进行测试
+    //translated comment
     for (size_t block_size_kb : block_sizes_kb)
     {
-        // 将KB转换为元素数量 (double = 8 bytes)
+        //KB (double = 8 bytes)
         cudaDeviceReset();
 
         size_t chunkSize = (block_size_kb * 1025) / sizeof(double);
@@ -179,20 +179,20 @@ int test_multiple_blocksizes(const std::string &file_path, const std::vector<siz
         CompressionInfo a;
         for (int i = 0; i < 3; i++)
         {
-            // 每次循环重置GPU并重新准备数据
+            //GPU
             cudaDeviceReset();
 
-            // 重新准备CUDA资源
+            //CUDA
             ProcessedData data = prepare_data(file_path);
 
-            // 执行测试
+            //translated comment
             auto tmp = test_compression(data, chunkSize);
             cudaDeviceSynchronize();
             a += tmp;
 
             // printf("Iteration %d - a:%.6f, get:%.6f\n", i+1, a.compression_ratio/(i+1), tmp.compression_ratio);
 
-            // 清理本次迭代的资源
+            //translated comment
             cleanup_data(data);
             // cudaFree(0);
         }
@@ -204,7 +204,7 @@ int test_multiple_blocksizes(const std::string &file_path, const std::vector<siz
     return 0;
 }
 
-// 生成数据测试多个块大小
+//translated comment
 int test_multiple_blocksizes_generated(size_t data_size_mb, const std::vector<size_t> &block_sizes_kb,
                                        int pattern_type = 0) {
     printf("=================================================\n");
@@ -212,8 +212,8 @@ int test_multiple_blocksizes_generated(size_t data_size_mb, const std::vector<si
     printf("=================================================\n");
 
 
-    // 准备数据
-    // 将MB转换为元素数量 (每个元素是double类型，8字节)
+    //translated comment
+    //MB ( double ，8 )
     size_t nbEle = (data_size_mb * 1024 * 1024) / sizeof(double);
     ProcessedData data = prepare_data("", nbEle, pattern_type);
     if (data.nbEle == 0) {
@@ -221,29 +221,29 @@ int test_multiple_blocksizes_generated(size_t data_size_mb, const std::vector<si
         return 1;
     }
     printf("GPU预热中...\n");
-    size_t warmup_chunk = data.nbEle; // 单流
+    size_t warmup_chunk = data.nbEle; //translated comment
     FalconPipeline ex;
 
     ex.executeCompressionPipeline(data, warmup_chunk);
-    cudaDeviceSynchronize(); // 确保预热完成
+    cudaDeviceSynchronize(); //translated comment
 
 
-    // 检查GPU可用内存
+    //GPU
     size_t freeMem, totalMem;
     cudaMemGetInfo(&freeMem, &totalMem);
     // size_t poolSize = freeMem * 0.4;
-    // poolSize = (poolSize + 1024 * 2 * sizeof(double) - 1) & ~(1024 * 2 * sizeof(double) - 1); // 向上对齐
+    //poolSize = (poolSize + 1024 * 2 * sizeof(double) - 1) & ~(1024 * 2 * sizeof(double) - 1); //
 
     std::vector<PipelineAnalysis> results;
 
-    // 对每个块大小进行测试
+    //translated comment
     for (size_t block_size_kb: block_sizes_kb) {
-        // 将KB转换为元素数量 (double = 8 bytes)
+        //KB (double = 8 bytes)
         size_t chunkSize = (block_size_kb * 1024) / sizeof(double);
 
         printf("\n[测试块大小: %zu KB (%zu 元素)]\n", block_size_kb, chunkSize);
 
-        // 执行压缩并获取结果
+        //translated comment
         for(int i=0;i<3;i++)
         {
             FalconPipeline ex;
@@ -252,23 +252,23 @@ int test_multiple_blocksizes_generated(size_t data_size_mb, const std::vector<si
             results.push_back(result);
         }
 
-        // 稍微延迟一下，让GPU冷却
+        //， GPU
         std::this_thread::sleep_for(std::chrono::milliseconds(500*3));
     }
 
-    // 可视化块大小与阶段时间的关系
+    //translated comment
     // visualize_stage_timing_relationship(results);
 
-    // 输出CSV数据以便外部绘图分析
+    //CSV
     // output_blocksize_timing_csv(results, "block_size_timing_analysis_generated.csv");
 
-    // 清理资源
+    //translated comment
     cleanup_data(data);
 
     return 0;
 }
 
-// 生成二次方增长的块大小序列
+//translated comment
 std::vector<size_t> generate_power2_blocksizes(size_t min_kb, size_t max_kb) {
     std::vector<size_t> sizes;
     for (size_t size = min_kb; size <= max_kb; size *= 2) {
@@ -277,7 +277,7 @@ std::vector<size_t> generate_power2_blocksizes(size_t min_kb, size_t max_kb) {
     return sizes;
 }
 
-// 生成线性增长的块大小序列
+//translated comment
 std::vector<size_t> generate_linear_blocksizes(size_t min_kb, size_t max_kb, size_t step_kb) {
     std::vector<size_t> sizes;
     for (size_t size = min_kb; size <= max_kb; size += step_kb) {
@@ -296,23 +296,23 @@ void warmup()
             return ;
         }
         printf("GPU预热中...\n");
-        size_t warmup_chunk = data.nbEle; // 单流
+        size_t warmup_chunk = data.nbEle; //translated comment
         FalconPipeline ex;
         ex.executeCompressionPipeline(data, warmup_chunk);
-        cudaDeviceSynchronize(); // 确保预热完成
+        cudaDeviceSynchronize(); //translated comment
 }
 
 int setChunk(int nbEle)
 {
     size_t chunkSize=1025;
     size_t temp=nbEle/NUM_STREAM;// (data+temp-1)/temp<NUm_stream
-    //可用的显存
+    //translated comment
     // size_t availableMemory = getAvailableGPUMemory();
     size_t availableMemory, totalMem;
     cudaMemGetInfo(&availableMemory, &totalMem);
     // size_t limit=availableMemory/(4 * NUM_STREAM * sizeof(double) * 2);
     size_t limit=64*1025*1024/sizeof(double);
-    //最多同时有16流 chunkSize*NUM_STREAM*8*sizeof(double) * 2<availableMemory/8*
+    //16 chunkSize*NUM_STREAM*8*sizeof(double) * 2<availableMemory/8*
     while(chunkSize<=limit//MAX_NUMS_PER_CHUNK l
             && chunkSize<=temp)
     {
@@ -323,7 +323,7 @@ int setChunk(int nbEle)
     return chunkSize;
 }
 
-// 主要测试函数 - 支持文件路径或生成数据
+//translated comment
 int test(const std::string &file_path = "", size_t data_size_mb = 0, int pattern_type = 0) {
     // warmup();
     cudaDeviceReset();
@@ -334,22 +334,22 @@ int test(const std::string &file_path = "", size_t data_size_mb = 0, int pattern
         
         CompressionInfo a;
         for(int i = 0; i < 3; i++) {
-            // 每次循环重置GPU并重新准备数据
+            //GPU
             cudaDeviceReset();
             
-            // 重新准备CUDA资源
+            //CUDA
             ProcessedData data = prepare_data(file_path);
             
-            // 计算chunk大小
+            //chunk
             size_t chunkSize = setChunk(data.nbEle);
             
-            // 执行测试
+            //translated comment
             auto tmp = test_compression(data, chunkSize);
             a += tmp;
             
             // printf("Iteration %d - a:%.6f, get:%.6f\n", i+1, a.compression_ratio/(i+1), tmp.compression_ratio);
             
-            // 清理本次迭代的资源
+            //translated comment
             cleanup_data(data);
         }
         a=a/3;
@@ -371,22 +371,22 @@ int test(const std::string &file_path = "", size_t data_size_mb = 0, int pattern
         // cleanup_data(data);
         CompressionInfo a;
         for(int i = 0; i < 3; i++) {
-            // 每次循环重置GPU并重新准备数据
+            //GPU
             cudaDeviceReset();
             
-            // 重新准备CUDA资源
+            //CUDA
             ProcessedData data = prepare_data("", nbEle, pattern_type);
             
-            // 计算chunk大小
+            //chunk
             size_t chunkSize = setChunk(data.nbEle);
             
-            // 执行测试
+            //translated comment
             auto tmp = test_compression(data, chunkSize);
             a += tmp;
             
             // printf("Iteration %d - a:%.6f, get:%.6f\n", i+1, a.compression_ratio/(i+1), tmp.compression_ratio);
             
-            // 清理本次迭代的资源
+            //translated comment
             cleanup_data(data);
         }
         a=a/3;
@@ -419,7 +419,7 @@ int main(int argc, char *argv[]) {
     } else if (arg == "--dir" && argc >= 3) {
         std::string dir_path = argv[2];
 
-        // 检查目录是否存在
+        //translated comment
         if (!fs::exists(dir_path)) {
             std::cerr << "指定的数据目录不存在: " << dir_path << std::endl;
             return 1;
@@ -443,22 +443,22 @@ int main(int argc, char *argv[]) {
             
             CompressionInfo a;
             for(int i = 0; i < 1; i++) {
-                // 每次循环重置GPU并重新准备数据
+                //GPU
                 cudaDeviceReset();
                 
-                // 重新准备CUDA资源
+                //CUDA
                 ProcessedData data = prepare_data(file_path,0,0,beta);
                 
-                // 计算chunk大小
+                //chunk
                 size_t chunkSize = setChunk(data.nbEle);
                 
-                // 执行测试
+                //translated comment
                 auto tmp = test_compression(data, chunkSize);
                 a += tmp;
                 
                 // printf("Iteration %d - a:%.6f, get:%.6f\n", i+1, a.compression_ratio/(i+1), tmp.compression_ratio);
                 
-                // 清理本次迭代的资源
+                //translated comment
                 cleanup_data(data);
             }
             // a=a/3;
@@ -478,8 +478,8 @@ int main(int argc, char *argv[]) {
     } else if (arg == "--analyze-blocks" && argc >= 3) {
         std::string file_path = argv[2];
         title = "analyze-blocks " + file_path;
-        // 创建不同大小的块序列
-        // 从16mbB到512MB，以二次方增长
+        //translated comment
+        //16mbB 512MB，
         std::vector<size_t> block_sizes = generate_power2_blocksizes(16*1024/4, 2*64*1024);
 
         test_multiple_blocksizes(file_path, block_sizes);
@@ -490,8 +490,8 @@ int main(int argc, char *argv[]) {
         std::string pattern_str = (argc >= 4) ? argv[3] : "0";
         title = std::string("analyze-blocks-gen ") + argv[2] + " " + pattern_str;
 
-        // 创建不同大小的块序列
-        // 从16mbB到512MB，以二次方增长
+        //translated comment
+        //16mbB 512MB，
         std::vector<size_t> block_sizes = generate_power2_blocksizes(16*1024, 8*64*1024);
 
         test_multiple_blocksizes_generated(data_size_mb, block_sizes, pattern_type);
@@ -499,13 +499,13 @@ int main(int argc, char *argv[]) {
     {
         std::string dir_path = argv[2];
 
-        // 检查目录是否存在
+        //translated comment
         if (!fs::exists(dir_path))
         {
             std::cerr << "指定的数据目录不存在: " << dir_path << std::endl;
             return 1;
         }
-        // 从16mbB到512MB，以二次方增长
+        //16mbB 512MB，
         std::vector<size_t> block_sizes = generate_power2_blocksizes(4*1024, 64*1024);
         // std::vector<size_t> block_sizes = {32 * 1024};
         // int streams[5]={1,4,8,16,32};
@@ -527,7 +527,7 @@ int main(int argc, char *argv[]) {
     else if(arg == "--analyze-streams-dir" && argc >= 3){
         std::string dir_path = argv[2];
 
-        // 检查目录是否存在
+        //translated comment
         if (!fs::exists(dir_path))
         {
             std::cerr << "指定的数据目录不存在: " << dir_path << std::endl;
@@ -551,16 +551,16 @@ int main(int argc, char *argv[]) {
                     printf("=================================================\n");
                     CompressionInfo a;
                     for(int i = 0; i < 3; i++) {
-                        // 每次循环重置GPU并重新准备数据
+                        //GPU
                         cudaDeviceReset();
                         
-                        // 重新准备CUDA资源
+                        //CUDA
                         ProcessedData data = prepare_data(file_path);
                         
-                        // 计算chunk大小
+                        //chunk
                         size_t chunkSize = setChunk(data.nbEle);
                         
-                        // 执行测试
+                        //translated comment
                         auto tmp = test_streams_compression(data, chunkSize);
                         a += tmp;
 

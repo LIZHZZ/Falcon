@@ -185,7 +185,7 @@ private:
 
 };
 
-// CUDA错误检查宏
+//CUDA
 #ifndef cudaCheckError
 #define cudaCheckError(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true) {
@@ -196,6 +196,6 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
 }
 #endif
 
-// 清理资源函数
+//translated comment
 void cleanup_data(ProcessedData &data);
 

@@ -24,11 +24,11 @@ void InputBitStream::Forward(size_t len) {
 }
 
 uint64_t InputBitStream::ReadLong(size_t len) {
-  uint64_t ret = (len > 32) * Peek(32);     // Peek 32 位并与 ret 的高位部分相加
-  Forward((len > 32) * 32);                 // 如果 len > 32，则前进 32 位
-  len -= (len > 32) * 32;                   // len 减去 32，避免使用分支
-  ret = (ret << len) | Peek(len);           // 处理剩下的位数，直接移位和拼接
-  Forward(len);                             // 前进剩余的位
+  uint64_t ret = (len > 32) * Peek(32);     //Peek 32 ret
+  Forward((len > 32) * 32);                 //len > 32， 32
+  len -= (len > 32) * 32;                   //len 32，
+  ret = (ret << len) | Peek(len);           //translated comment
+  Forward(len);                             //translated comment
   return ret;
 }
 

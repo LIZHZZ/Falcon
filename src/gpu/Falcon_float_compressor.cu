@@ -519,7 +519,7 @@ void FalconCompressor::Falcon_compress(float *d_oriData, unsigned char *d_cmpByt
     cudaFreeAsync(d_flag, stream);
 }
 
-// 返回bits
+//bits
 void FalconCompressor::Falcon_compress_stream(float *d_oriData, unsigned char *d_cmpBytes, unsigned int *d2h_async_totalBits_ptr, size_t nbEle, cudaStream_t stream)
 {
     // Data blocking.
@@ -560,15 +560,15 @@ __global__ void compressBlockKernel(
     int totalSize,
     unsigned char *output,
     uint64_t *bitSizes,
-    volatile unsigned int *const __restrict__ cmpOffset, // 压缩数据偏移量数组（输出）
-    volatile unsigned int *const __restrict__ locOffset, // 局部偏移量数组（输出）
-    volatile int *const __restrict__ flag                // 标志数组，用于同步不同warp的状态（输出
+    volatile unsigned int *const __restrict__ cmpOffset, //translated comment
+    volatile unsigned int *const __restrict__ locOffset, //translated comment
+    volatile int *const __restrict__ flag                //， warp （
 )
 {
-    // 共享内存，用于在线程块内共享数据
-    __shared__ unsigned int excl_sum; // 排他性前缀和，用于偏移量计算
+    //translated comment
+    __shared__ unsigned int excl_sum; //translated comment
 
-    // 获取线程和块信息
+    //translated comment
     int tid = threadIdx.x;
     int bid = blockIdx.x;
     int idx = bid * blockDim.x + tid;
@@ -585,7 +585,7 @@ __global__ void compressBlockKernel(
     {
         return;
     }
-    // 局部变量
+    //translated comment
     int maxDecimalPlaces = 0;
     int maxBeta = 0;
     int firstValue = 0;
@@ -593,7 +593,7 @@ __global__ void compressBlockKernel(
 
     int base_block_start_idx, base_block_end_idx;
     int quant_chunk_idx;
-    // int block_idx; // 如果不使用，可以移除
+    //int block_idx; // ，
 
     int currQuant;
     int lorenQuant;
@@ -619,34 +619,34 @@ __global__ void compressBlockKernel(
     firstValue = float2int(input[startIdx], maxDecimalPlaces, maxBeta); // Quantize the first value
     prevQuant = firstValue;                                             // Initialize previous quantized value
     for (int j = 0; j < (numDatas + 30) / 32; j++)
-    {                                                   // 每个线程的数量 / 一个数据批次（32）
-        base_block_start_idx = startIdx + j * 32 + 1;       // 每一组32个数据的起始位置
-        base_block_end_idx = base_block_start_idx + 32 + 1; // 每一组32个数据的结束位置
+    {                                                   //translated comment
+        base_block_start_idx = startIdx + j * 32 + 1;       //translated comment
+        base_block_end_idx = base_block_start_idx + 32 + 1; //translated comment
 
         if (base_block_end_idx < totalSize)
         {
             int i = base_block_start_idx;
             /*
                 tmp_buffer = reinterpret_cast<const float4 *>(input)[i / 4];
-                quant_chunk_idx = j * 32 + (i % 32); // 处理的每一组的第几个数据
+                quant_chunk_idx = j * 32 + (i % 32); //translated comment
 
-                // 处理x分量
+                //translated comment
                 if (i == startIdx)
-                { // 针对第一个数据
+                { //translated comment
 
-                    deltas[quant_chunk_idx] = 0; // 填充第一个数据为0保证1024个数据
+                    deltas[quant_chunk_idx] = 0; //translated comment
                 }
                 else
                 {
-                    currQuant = float2int(tmp_buffer.x, maxDecimalPlaces, maxBeta); // 量化当前数据点
-                    lorenQuant = currQuant - prevQuant;                             // 计算差分
+                    currQuant = float2int(tmp_buffer.x, maxDecimalPlaces, maxBeta); //translated comment
+                    lorenQuant = currQuant - prevQuant;                             //translated comment
 
                     deltas[quant_chunk_idx] = zigzag_encode_cuda(lorenQuant);
-                    prevQuant = currQuant;                                           // 更新前一个量化值
-                    maxDelta = device_max_uint32(maxDelta, deltas[quant_chunk_idx]); // 存储差分绝对值
+                    prevQuant = currQuant;                                           //translated comment
+                    maxDelta = device_max_uint32(maxDelta, deltas[quant_chunk_idx]); //translated comment
                 }
 
-                // 处理y分量
+                //translated comment
                 currQuant = float2int(tmp_buffer.y, maxDecimalPlaces, maxBeta);
                 lorenQuant = currQuant - prevQuant;
 
@@ -654,7 +654,7 @@ __global__ void compressBlockKernel(
                 prevQuant = currQuant;
                 maxDelta = device_max_uint32(maxDelta, deltas[quant_chunk_idx + 1]);
 
-                // 处理z分量
+                //translated comment
                 currQuant = float2int(tmp_buffer.z, maxDecimalPlaces, maxBeta);
                 lorenQuant = currQuant - prevQuant;
 
@@ -662,7 +662,7 @@ __global__ void compressBlockKernel(
                 prevQuant = currQuant;
                 maxDelta = device_max_uint32(maxDelta, deltas[quant_chunk_idx + 2]);
 
-                // 处理w分量
+                //translated comment
                 currQuant = float2int(tmp_buffer.w, maxDecimalPlaces, maxBeta);
                 lorenQuant = currQuant - prevQuant;
 
@@ -672,25 +672,25 @@ __global__ void compressBlockKernel(
                 i += 4;
             */
 
-            #pragma unroll 8 // 循环展开8次，就是4*8=32个数据,修改为7次，把第一次提取出来
+            #pragma unroll 8 //translated comment
             for (; i < base_block_end_idx; i += 4)
             {
 
                 // tmp_buffer = reinterpret_cast<const float4 *>(input)[i / 4];
-                // quant_chunk_idx = j * 32 + (i % 32); // 处理的每一组的第几个数据
+                //quant_chunk_idx = j * 32 + (i % 32); //
 
                 tmp_buffer = reinterpret_cast<const float4*>(input+1)[(i-1) / 4];
-                quant_chunk_idx = j * 32 + ((i-1) % 32); //处理的每一组的第几个数据
+                quant_chunk_idx = j * 32 + ((i-1) % 32); //translated comment
 
-                currQuant = float2int(tmp_buffer.x, maxDecimalPlaces, maxBeta); // 量化当前数据点
-                lorenQuant = currQuant - prevQuant;                             // 计算差分
+                currQuant = float2int(tmp_buffer.x, maxDecimalPlaces, maxBeta); //translated comment
+                lorenQuant = currQuant - prevQuant;                             //translated comment
 
                 deltas[quant_chunk_idx] = zigzag_encode_cuda(lorenQuant);
-                prevQuant = currQuant;                                           // 更新前一个量化值
-                maxDelta = device_max_uint32(maxDelta, deltas[quant_chunk_idx]); // 存储差分绝对值
+                prevQuant = currQuant;                                           //translated comment
+                maxDelta = device_max_uint32(maxDelta, deltas[quant_chunk_idx]); //translated comment
                 // }
 
-                // 处理y分量
+                //translated comment
                 currQuant = float2int(tmp_buffer.y, maxDecimalPlaces, maxBeta);
                 lorenQuant = currQuant - prevQuant;
 
@@ -698,7 +698,7 @@ __global__ void compressBlockKernel(
                 prevQuant = currQuant;
                 maxDelta = device_max_uint32(maxDelta, deltas[quant_chunk_idx + 1]);
 
-                // 处理z分量
+                //translated comment
                 currQuant = float2int(tmp_buffer.z, maxDecimalPlaces, maxBeta);
                 lorenQuant = currQuant - prevQuant;
 
@@ -706,7 +706,7 @@ __global__ void compressBlockKernel(
                 prevQuant = currQuant;
                 maxDelta = device_max_uint32(maxDelta, deltas[quant_chunk_idx + 2]);
 
-                // 处理w分量
+                //translated comment
                 currQuant = float2int(tmp_buffer.w, maxDecimalPlaces, maxBeta);
                 lorenQuant = currQuant - prevQuant;
 
@@ -717,21 +717,21 @@ __global__ void compressBlockKernel(
         }
         else
         {
-            // 处理当前数据块超出数据范围的情况
+            //translated comment
             if (base_block_start_idx >= endIdx)
             {
-                // 如果整个数据块都超出范围，将absQuant设置为0
+                //， absQuant 0
                 quant_chunk_idx = j * 32 + (base_block_start_idx % 32);
                 for (int i = quant_chunk_idx; i < quant_chunk_idx + 32; i++)
                     deltas[i] = 0;
             }
             else
             {
-                // 部分数据块在范围内，部分超出范围
-                int remainbEle = totalSize - base_block_start_idx; // 剩余有效数据元素数
-                int zeronbEle = base_block_end_idx - totalSize;    // 超出范围的数据元素数
+                //translated comment
+                int remainbEle = totalSize - base_block_start_idx; //translated comment
+                int zeronbEle = base_block_end_idx - totalSize;    //translated comment
 
-                // 处理剩余有效数据元素
+                //translated comment
                 for (int i = base_block_start_idx; i < base_block_start_idx + remainbEle; i++)
                 {
                     if (i == startIdx)
@@ -756,7 +756,7 @@ __global__ void compressBlockKernel(
         }
     }
 
-    bitCount = maxDelta > 0 ? 32 - __clz(maxDelta) : 1; // 用内置函数 替代处理循环
+    bitCount = maxDelta > 0 ? 32 - __clz(maxDelta) : 1; //translated comment
     bitCount = min(bitCount, (int)MAX_BITCOUNT);
 
     int numByte = (numDatas-1 + 7) / 8;
@@ -765,11 +765,11 @@ __global__ void compressBlockKernel(
 
     // Traverse each bit-plane
     for (int i = 0; i < bitCount; ++i)
-    { // 行
+    { //translated comment
         int j = 0;
-        while (j + 8 < numDatas-1) // 有效 0.0027->0.0023
+        while (j + 8 < numDatas-1) //translated comment
         {
-            int byteIndex = j / 8; // 当前bit属于第几个字节
+            int byteIndex = j / 8; //bit
             result[i][byteIndex] = result[i][byteIndex] |
                                    (((deltas[j] >> (bitCount - 1 - i)) & 1) << (7)) |
                                    (((deltas[j + 1] >> (bitCount - 1 - i)) & 1) << (6)) |
@@ -782,16 +782,16 @@ __global__ void compressBlockKernel(
             j += 8;
         }
         for (; j < numDatas-1; ++j)
-        {                          // 列numBytes
-            int byteIndex = j / 8; // 当前bit属于第几个字节
-            int bitIndex = j % 8;  // 当前bit在字节中的位置
+        {                          //numBytes
+            int byteIndex = j / 8; //bit
+            int bitIndex = j % 8;  //bit
 
-            // 提取当前bit位并存入结果数组
+            //bit
             result[i][byteIndex] |= (((deltas[j] >> (bitCount - 1 - i)) & 1) << (7 - bitIndex));
         }
     }
 
-    // 4.2 设置稀疏列，并且进行标记，同时计算bitsize
+    //4.2 ， ， bitsize
     uint64_t bitSize = 32 +   // bitsize
                        32 +   // firstValue
                        8ULL + // maxDecimalPlaces
@@ -799,12 +799,12 @@ __global__ void compressBlockKernel(
                        8ULL + // bitCount
                        32;    // flag1
 
-    uint32_t flag1 = 0;    // 用于记录每一列是否为稀疏列
-    uint8_t flag2[32][16]; // 对于稀疏列统计稀疏位置,最多1024个数据，所以最多1024bit，即128byte,
+    uint32_t flag1 = 0;    //translated comment
+    uint8_t flag2[32][16]; //, 1024 ， 1024bit， 128byte,
     memset(flag2, 0, sizeof(flag2));
     int BITS_PER_THREAD = 4;
     for (int i = 0; i < bitCount; i += BITS_PER_THREAD)
-    { // 每次处理4个比特位
+    { //translated comment
         for (int b = 0; b < BITS_PER_THREAD && (i + b) < bitCount; ++b)
         {
             int bit = i + b;
@@ -817,31 +817,31 @@ __global__ void compressBlockKernel(
                 uint8_t current_result = result[bit][j];
                 b0 += (current_result == 0);
                 b1 += (current_result != 0);
-                flag2[bit][m_byte] |= (current_result != 0) << m_bit;    // 设置1
-                flag2[bit][m_byte] &= ~((current_result == 0) << m_bit); // 清零
+                flag2[bit][m_byte] |= (current_result != 0) << m_bit;    //translated comment
+                flag2[bit][m_byte] &= ~((current_result == 0) << m_bit); //translated comment
             }
-            // 使用掩码和算术操作代替分支(有效0.0023->0.0021)
+            //translated comment
             uint32_t is_sparse = ((numByte + 7) / 8 + b1) < numByte;
             flag1 |= (is_sparse << bit);
             flag1 &= ~((!is_sparse) << bit);
             bitSize += is_sparse ? ((numByte + 7) / 8 + b1) * 8 : 8 * numByte;
-            // flag2的长度+b1或者numByte*8
+            //flag2 +b1 numByte*8
         }
     }
-    // 5. 前缀和计算
-    thread_ofs += bitSize; // bitSize是每一个线程处理后需要写入的数据量所占的bit位
+    //translated comment
+    thread_ofs += bitSize; //bitSize bit
 
-// 5.1. Warp(块)内前缀和计算，确定每个线程的字节偏移量
+//5.1. Warp( ) ，
 #pragma unroll 5
     for (int i = 1; i < 32; i <<= 1)
     {
         int tmp = __shfl_up_sync(0xffffffff, thread_ofs, i);
         if (lane >= i)
-            thread_ofs += tmp; // 累加偏移量
+            thread_ofs += tmp; //translated comment
     }
-    __syncthreads(); // 同步线程，确保前缀和计算完成
+    __syncthreads(); //translated comment
 
-    // 5.2 Warp(块)内最后一个线程更新locOffset和flag数组
+    //5.2 Warp( ) locOffset flag
     if (lane == 31)
     {
         locOffset[warp + 1] = thread_ofs; // Update local offset for the next warp
@@ -859,9 +859,9 @@ __global__ void compressBlockKernel(
             __threadfence();
         }
     }
-    __syncthreads(); // 同步线程，确保flag更新完成
+    __syncthreads(); //， flag
 
-    // 5.3 对于非第一个warp，计算排他性前缀和（有问题）
+    //5.3 warp， （ ）
     if (warp > 0)
     {
         if (!lane) // First lane of each warp
@@ -874,38 +874,38 @@ __global__ void compressBlockKernel(
                 int status;
                 do
                 {
-                    status = flag[lookback]; // 获取一个warp的状态
-                    __threadfence();         // 确保读取到最新的状态
+                    status = flag[lookback]; //warp
+                    __threadfence();         //translated comment
                 } while (status == 0);
 
                 if (status == 2)
                 {
-                    loc_excl_sum += cmpOffset[lookback]; // 累加前一个warp的cmpOffset
+                    loc_excl_sum += cmpOffset[lookback]; //warp cmpOffset
                     __threadfence();
                     break;
                 }
                 if (status == 1)
-                    loc_excl_sum += locOffset[lookback]; // 累加前一个warp的locOffset
+                    loc_excl_sum += locOffset[lookback]; //warp locOffset
                 lookback--;
                 __threadfence();
             }
-            excl_sum = loc_excl_sum; // 存储排他性前缀和
-            // 2.3 更新cmpOffset数组
-            cmpOffset[warp] = excl_sum; // 更新当前warp的cmpOffset
-            __threadfence();            // 确保写操作完成
+            excl_sum = loc_excl_sum; //translated comment
+            //2.3 cmpOffset
+            cmpOffset[warp] = excl_sum; //warp cmpOffset
+            __threadfence();            //translated comment
 
             if (warp == gridDim.x - 1)
             {
-                cmpOffset[warp + 1] = cmpOffset[warp] + locOffset[warp + 1]; // 更新最后一个warp的cmpOffset
+                cmpOffset[warp + 1] = cmpOffset[warp] + locOffset[warp + 1]; //warp cmpOffset
                 __threadfence();
             }
-            flag[warp] = 2; // 标记当前warp完成
+            flag[warp] = 2; //warp
             __threadfence();
         }
     }
     else
     {
-        // warp==0：显式把排他前缀和置 0（由一个线程写，block 内可见）
+        //warp==0： 0（ ，block ）
         if (!lane)
         {
             excl_sum = 0;
@@ -921,13 +921,13 @@ __global__ void compressBlockKernel(
 
     unsigned int firstValueBits = 0;
     memcpy(&firstValueBits, &firstValue, sizeof(int));
-    // 6.1 写入 bitSize (4 字节)
+    //6.1 bitSize (4 )
     for (int i = 0; i < 4; i++)
     {
         output[outputIdx + i] = (bitSize >> (i * 8)) & 0xFF;
     }
 
-    // 6.2. 写入 firstValue (8 字节)
+    //6.2. firstValue (8 )
     for (int i = 0; i < 4; i++)
     {
         output[outputIdx + 4 + i] = (firstValueBits >> (i * 8)) & 0xFF;
@@ -940,19 +940,19 @@ __global__ void compressBlockKernel(
     //     printf("COM: bitSize:%d, first: %d, maxDecimalPlaces: %d, maxBeta: %d, bitcount: %d \n",bitSize, firstValue,maxDecimalPlaces,maxBeta,bitCount);
     // }
 
-    // 6.4 写入flag1(4字节 标识稀疏)
+    //6.4 flag1(4 )
     for (int i = 0; i < 4; i++)
     {
         output[outputIdx + 11 + i] = (flag1 >> (i * 8)) & 0xFF;
     }
-    // 6.5 写入每一列
+    //translated comment
     int flag2Byte = (numByte + 7) / 8;
     int ofs = outputIdx + 15;
     for (int i = 0; i < bitCount; i++)
     {
         if ((flag1 & (1ULL << i)) != 0) // Non-zero flag bit i means this column is sparse
         {
-            // 6.5.1 稀疏列写入flag2+data
+            //6.5.1 flag2+data
             for (int j = 0; j < flag2Byte; j++)
             {
                 output[ofs++] = static_cast<unsigned char>(flag2[i][j]);
@@ -1064,16 +1064,16 @@ void FalconCompressor::compress(const std::vector<float> &input, std::vector<uns
     cudaCheckError(cudaDeviceSynchronize());
     // std::cout<<"end2\n";
 
-    // 记录结束事件
+    //translated comment
     cudaCheckError(cudaEventRecord(stop));
-    cudaCheckError(cudaEventSynchronize(stop)); // 等待事件完成
+    cudaCheckError(cudaEventSynchronize(stop)); //translated comment
 
-    // 计算耗时（毫秒）
+    //translated comment
     float milliseconds = 0;
     cudaCheckError(cudaEventElapsedTime(&milliseconds, start, stop));
 
-    // 计算吞吐量
-    size_t dataSizeBytes = input.size() * sizeof(float); // 原始数据量
+    //translated comment
+    size_t dataSizeBytes = input.size() * sizeof(float); //translated comment
     float seconds = milliseconds / 1000.0f;
 
     // MB/s = (bytes / 1e6) / seconds
@@ -1082,7 +1082,7 @@ void FalconCompressor::compress(const std::vector<float> &input, std::vector<uns
     // GB/s = (bytes / 1e9) / seconds
     float throughputGBs = (dataSizeBytes / 1e9) / seconds;
 
-    // 打印结果（保留两位小数）
+    //translated comment
     std::cout << std::fixed << std::setprecision(2);
     std::cout << "压缩核函数时间" << milliseconds
               << " ms. \nThroughput: "
@@ -1090,17 +1090,17 @@ void FalconCompressor::compress(const std::vector<float> &input, std::vector<uns
               << throughputGBs << " GB/s)"
               << std::endl;
 
-    // 清理事件
+    //translated comment
     cudaCheckError(cudaEventDestroy(start));
     cudaCheckError(cudaEventDestroy(stop));
 
-    // 复制 bitSizes 回主机
+    //bitSizes
 
     std::vector<uint64_t> bitSizes(numthread);
     cudaCheckError(cudaMemcpy(bitSizes.data(), d_bitSizes, numthread * sizeof(uint64_t), cudaMemcpyDeviceToHost));
     // std::cout<<"end3\n";
 
-    // 计算每个块的输出偏移量
+    //translated comment
     std::vector<uint64_t> offsets(numthread, 0);
     uint64_t totalCompressedBits = 0;
     for (size_t i = 0; i < numthread; i++)
@@ -1109,11 +1109,11 @@ void FalconCompressor::compress(const std::vector<float> &input, std::vector<uns
         totalCompressedBits += bitSizes[i];
     }
 
-    uint64_t totalCompressedBytes = (totalCompressedBits + 7) / 8; // 按字节对齐
+    uint64_t totalCompressedBytes = (totalCompressedBits + 7) / 8; //translated comment
 
-    // // 分配输出缓冲区
+    //translated comment
     output.resize(totalCompressedBytes, 0);
-    // 复制 d_output 到主机的临时缓冲区
+    //d_output
     std::vector<unsigned char> tempOutput(totalCompressedBytes);
     cudaCheckError(cudaMemcpy(tempOutput.data(), d_output, totalCompressedBytes * sizeof(unsigned char), cudaMemcpyDeviceToHost));
     output = std::move(tempOutput);

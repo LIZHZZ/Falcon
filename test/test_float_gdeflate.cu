@@ -223,7 +223,7 @@ CompressionInfo test_compression(const std::string& file_path) {
 //     std::cout << "Data Size: " << data_size_gb << " GB" << std::endl;
 //     std::cout << "Compression Throughput: " << compress_throughput << " GB/s" << std::endl;
 //     std::cout << "Decompression Throughput: " << decompress_throughput << " GB/s" << std::endl;
-    // =========================== 清理资源 ===========================
+    //translated comment
     
     if (device_input_data) {
         err = cudaFree(device_input_data);
@@ -262,7 +262,7 @@ CompressionInfo test_compression(const std::string& file_path) {
     // }
     return ans;
 }
-// Google Test 测试用例
+//Google Test
 TEST(GDeflateCompressorTest, CompressionDecompression) {
     std::string dir_path = "../test/data/new_tsbs";
     if (!fs::exists(dir_path)) {
@@ -308,7 +308,7 @@ int main(int argc, char *argv[]) {
 
         std::string dir_path = argv[2];
 
-        // 检查目录是否存在
+        //translated comment
         if (!fs::exists(dir_path)) {
             std::cerr << "指定的数据目录不存在: " << dir_path << std::endl;
             return 1;

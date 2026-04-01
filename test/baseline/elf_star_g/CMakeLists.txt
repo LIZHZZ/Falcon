@@ -43,16 +43,16 @@ set_property(TARGET elf_star_g PROPERTY CUDA_SEPARABLE_COMPILATION ON)
 # Set CUDA resolve device symbols
 set_property(TARGET elf_star_g PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS ON)
 
-# --- 最佳实践：使用 target_include_directories ---
-# 这会告诉 'elf_star_g' 这个目标去哪里寻找它需要的头文件。
+# --- ： target_include_directories ---
+# 'elf_star_g' 。
 target_include_directories(elf_star_g PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/BitStream
         ${CMAKE_CURRENT_SOURCE_DIR}/utils
 )
 
-# --- 最佳实践：链接必要的库 ---
-# 将CUDA运行时库链接到你的目标
+# translated comment
+# CUDA
 target_link_libraries(elf_star_g PRIVATE CUDA::cudart)
 
 # Optional: Set CUDA architectures if needed (suppress deprecation warnings)
@@ -61,7 +61,7 @@ set_target_properties(elf_star_g PROPERTIES CUDA_ARCHITECTURES "75;80;86")
 # Add compiler flags to suppress deprecation warnings
 target_compile_options(elf_star_g PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-Wno-deprecated-gpu-targets>)
 
-# ===== 添加测试程序 =====
+# translated comment
 
 # Create test executable
 add_executable(elf_star_test test_elf_star.cu)

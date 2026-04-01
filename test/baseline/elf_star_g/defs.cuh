@@ -1,16 +1,16 @@
 //
 // Created by lizhzz on 25-7-8.
-// Fixed version - 修复了工具函数的实现错误
+//Fixed version -
 //
-// 添加跨平台 ssize_t 定义
+//ssize_t
 #ifndef _SSIZE_T_DEFINED
     #define _SSIZE_T_DEFINED
 
     #ifdef _WIN32
-        #include <basetsd.h> // 包含 SSIZE_T 定义
+        #include <basetsd.h> //SSIZE_T
         typedef SSIZE_T ssize_t;
     #else
-        #include <sys/types.h> // Linux/macOS 环境
+        #include <sys/types.h> //Linux/macOS
     #endif
 #endif
 
@@ -64,7 +64,7 @@ static __device__ void getSPAnd10iNFlag(double v, int result_sp_flag[2]) {
             }
             i++;
         }
-        // 修复：处理超出范围的情况
+        //translated comment
         result_sp_flag[0] = MAP_SP_GREATER_1_SIZE - 1;
     } else {
         int i = 1;
@@ -76,18 +76,18 @@ static __device__ void getSPAnd10iNFlag(double v, int result_sp_flag[2]) {
             }
             i++;
         }
-        // 修复：处理超出范围的情况
+        //translated comment
         result_sp_flag[0] = -(MAP_SP_LESS_1_SIZE - 1);
     }
     
-    // 修复：如果没有在表中找到，使用log10计算
+    //： ， log10
     double log10v = log10(v);
     result_sp_flag[0] = (int) floor(log10v);
     result_sp_flag[1] = (fabs(log10v - floor(log10v)) < 1e-10) ? 1 : 0;
 }
 
 static __device__ double get10iP(int i) {
-    if (i < 0) return 1.0; // 修复：处理负数情况
+    if (i < 0) return 1.0; //translated comment
     if (i >= MAP_10_I_P_SIZE) {
         return pow(10.0, i);
     } else {
@@ -110,26 +110,26 @@ static __device__ int getSignificantCount(double v, int sp, int lastBetaStar) {
         i = -sp;
     }
 
-    // 修复：添加边界检查
+    //translated comment
     if (i < 0) i = 1;
-    if (i > 20) i = 20; // 限制在合理范围内
+    if (i > 20) i = 20; //translated comment
 
     double temp = v * get10iP(i);
     long tempLong = (long) temp;
     
-    // 修复：添加迭代次数限制，防止无限循环
+    //translated comment
     int max_iterations = 10;
     int iterations = 0;
     
     while (tempLong != temp && iterations < max_iterations) {
         i++;
-        if (i > 20) break; // 防止超出合理范围
+        if (i > 20) break; //translated comment
         temp = v * get10iP(i);
         tempLong = (long) temp;
         iterations++;
     }
     
-    // 修复：更精确的浮点数比较
+    //translated comment
     if (fabs(temp / get10iP(i) - v) > 1e-15) {
         return 17;
     } else {
@@ -142,7 +142,7 @@ static __device__ int getSignificantCount(double v, int sp, int lastBetaStar) {
 }
 
 static __device__ void getAlphaAndBetaStar(double v, int lastBetaStar, int alphaAndBetaStar[2]) {
-    // 使用GPU内置函数fabs()来求绝对值，效率更高
+    //GPU fabs() ，
     v = fabs(v);
     int spAnd10iNFlag[2];
     getSPAnd10iNFlag(v, spAnd10iNFlag);
@@ -169,7 +169,7 @@ static __device__ int getSP(double v) {
             }
             i++;
         }
-        return MAP_SP_GREATER_1_SIZE - 1; // 修复：返回最大索引
+        return MAP_SP_GREATER_1_SIZE - 1; //translated comment
     } else {
         int i = 1;
         while (i < MAP_SP_LESS_1_SIZE) {
@@ -178,15 +178,15 @@ static __device__ int getSP(double v) {
             }
             i++;
         }
-        return -(MAP_SP_LESS_1_SIZE - 1); // 修复：返回最小索引
+        return -(MAP_SP_LESS_1_SIZE - 1); //translated comment
     }
     
-    // 备用计算
+    //translated comment
     return (int) floor(log10(v));
 }
 
 static __device__ double get10iN(int i) {
-    if (i < 0) return 1.0; // 修复：处理负数情况
+    if (i < 0) return 1.0; //translated comment
     if (i >= MAP_10_I_N_SIZE) {
         return pow(10.0, -i);
     } else {

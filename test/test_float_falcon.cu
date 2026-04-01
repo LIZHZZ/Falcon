@@ -15,9 +15,9 @@
 namespace fs = std::filesystem;
 
 std::string title = "";
-#define NUM_STREAMS 16 // 使用16个CUDA Stream实现流水线
+#define NUM_STREAMS 16 //16 CUDA Stream
 
-// 生成随机数据的函数
+//translated comment
 std::vector<float> generate_test_data(size_t nbEle, int pattern_type = 0) {
     std::vector<float> data(nbEle);
 
@@ -26,7 +26,7 @@ std::vector<float> generate_test_data(size_t nbEle, int pattern_type = 0) {
 
     switch (pattern_type) {
         case 0: {
-            // 随机数据
+            //translated comment
             std::uniform_real_distribution<float> dist(-1000.0, 1000.0);
             for (size_t i = 0; i < nbEle; ++i) {
                 data[i] = dist(gen);
@@ -34,21 +34,21 @@ std::vector<float> generate_test_data(size_t nbEle, int pattern_type = 0) {
             break;
         }
         case 1: {
-            // 线性增长数据
+            //translated comment
             for (size_t i = 0; i < nbEle; ++i) {
                 data[i] = static_cast<float>(i) * 0.01;
             }
             break;
         }
         case 2: {
-            // 正弦波数据
+            //translated comment
             for (size_t i = 0; i < nbEle; ++i) {
                 data[i] = 1000.0 * sin(0.01 * i);
             }
             break;
         }
         case 3: {
-            // 多步阶数据
+            //translated comment
             int step_size = nbEle / 10;
             for (size_t i = 0; i < nbEle; ++i) {
                 data[i] = static_cast<float>((i / step_size) * 100);
@@ -67,14 +67,14 @@ std::vector<float> generate_test_data(size_t nbEle, int pattern_type = 0) {
 }
 
 
-// 准备数据函数，支持文件和生成数据两种模式
+//translated comment
 ProcessedData_32 prepare_data_32(const std::string &source_path = "", 
                                   size_t generate_size = 0, 
                                   int pattern_type = 0) {
     ProcessedData_32 result;
     std::vector<float> data;
 
-    // 决定数据来源
+    //translated comment
     if (generate_size > 0) {
         data = generate_test_data(generate_size, pattern_type);
         result.nbEle = generate_size;
@@ -93,7 +93,7 @@ ProcessedData_32 prepare_data_32(const std::string &source_path = "",
         printf("wrong");
     }
     
-    // 分配固定内存
+    //translated comment
     cudaCheckError_32(cudaHostAlloc(&result.oriData, 
         result.nbEle * sizeof(float), cudaHostAllocDefault));
     cudaCheckError_32(cudaHostAlloc((void**)&result.cmpBytes, 
@@ -103,7 +103,7 @@ ProcessedData_32 prepare_data_32(const std::string &source_path = "",
     cudaCheckError_32(cudaHostAlloc(&result.decData, 
         result.nbEle * sizeof(float), cudaHostAllocDefault));
     
-    // 将数据拷贝到固定内存
+    //translated comment
     #pragma omp parallel for
     for (size_t i = 0; i < result.nbEle; ++i) {
         result.oriData[i] = data[i];
@@ -113,18 +113,18 @@ ProcessedData_32 prepare_data_32(const std::string &source_path = "",
 }
 CompressionInfo test_compression(ProcessedData_32 data, size_t chunkSize)
 {
-    // 创建流水线对象
+    //translated comment
     FalconPipeline_32 pipeline;
 
-    // 执行压缩流水线
+    //translated comment
     CompressionResult_32 compResult = pipeline.executeCompressionPipeline(data, chunkSize);
     cudaDeviceSynchronize(); 
 
-    // 执行解压缩流水线
+    //translated comment
     PipelineAnalysis_32 decompAnalysis = pipeline.executeDecompressionPipeline(compResult, data);
     cudaDeviceSynchronize(); 
 
-    // 返回压缩信息
+    //translated comment
     return CompressionInfo{
         decompAnalysis.total_size,
         decompAnalysis.total_compressed_size,
@@ -142,12 +142,12 @@ int setChunk(int nbEle)
 {
     size_t chunkSize=1025;
     size_t temp=nbEle/NUM_STREAMS;// (data+temp-1)/temp<NUm_streams
-    //可用的显存
+    //translated comment
     // size_t availableMemory = getAvailableGPUMemory();
     size_t availableMemory, totalMem;
     cudaMemGetInfo(&availableMemory, &totalMem);
     size_t limit=availableMemory/(4 * NUM_STREAMS * sizeof(float) * 2);
-    //最多同时有16流 chunkSize*NUM_STREAMS*8*sizeof(double) * 2<availableMemory/8*
+    //16 chunkSize*NUM_STREAMS*8*sizeof(double) * 2<availableMemory/8*
     while(chunkSize<=limit//MAX_NUMS_PER_CHUNK 
             && chunkSize<=temp)
     {
@@ -158,7 +158,7 @@ int setChunk(int nbEle)
     printf("chunkSize:%d\n",chunkSize);
     return chunkSize;
 }
-// 修改后的 test 函数
+//test
 int test_32(const std::string &file_path = "", size_t data_size_mb = 0, int pattern_type = 0) {
     cudaDeviceReset();
 
@@ -170,11 +170,11 @@ int test_32(const std::string &file_path = "", size_t data_size_mb = 0, int patt
         for(int i = 0; i < 3; i++) {
             cudaDeviceReset();
             
-            // 使用新的数据类型
+            //translated comment
             ProcessedData_32 data = prepare_data_32(file_path);
             size_t chunkSize = setChunk(data.nbEle);
             
-            // 调用新的测试函数
+            //translated comment
             auto tmp = test_compression(data, chunkSize);
             a += tmp;
             
@@ -227,7 +227,7 @@ int main(int argc, char *argv[]) {
     } else if (arg == "--dir" && argc >= 3) {
         std::string dir_path = argv[2];
 
-        // 检查目录是否存在
+        //translated comment
         if (!fs::exists(dir_path)) {
             std::cerr << "指定的数据目录不存在: " << dir_path << std::endl;
             return 1;

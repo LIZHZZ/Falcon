@@ -1,12 +1,12 @@
 //
-// 完整GPU版本的PostOffice算法 - 严格遵循CPU版本逻辑
+//GPU PostOffice - CPU
 // 
 
 #include "post_office_solver32.cuh"
 #include "BitStream/BitWriter.cuh"
 #include <climits>
 
-// 辅助函数：计算总数和非零位置信息
+//translated comment
 __device__ void calTotalCountAndNonZerosCounts_GPU32(
     const int *distribution,
     int *out_pre_non_zeros_count,
@@ -14,19 +14,19 @@ __device__ void calTotalCountAndNonZerosCounts_GPU32(
     int *out_total_count,
     int *out_non_zeros_count
 ) {
-    int non_zeros_count = 32; // 初始假设所有位置都非零
+    int non_zeros_count = 32; //translated comment
     int total_count = distribution[0];
-    out_pre_non_zeros_count[0] = 1; // 第一个位置视为非零
+    out_pre_non_zeros_count[0] = 1; //translated comment
     
     for (int i = 1; i < 32; ++i) {
         total_count += distribution[i];
-        // 使用CPU版本的"magic code"技术避免分支
+        //CPU "magic code"
         int magic_code = (distribution[i] == 0) ? 1 : 0;
         non_zeros_count -= magic_code;
         out_pre_non_zeros_count[i] = out_pre_non_zeros_count[i - 1] + (1 - magic_code);
     }
     
-    // 计算后缀非零计数
+    //translated comment
     for (int i = 0; i < 32; ++i) {
         out_post_non_zeros_count[i] = non_zeros_count - out_pre_non_zeros_count[i];
     }
@@ -35,7 +35,7 @@ __device__ void calTotalCountAndNonZerosCounts_GPU32(
     *out_non_zeros_count = non_zeros_count;
 }
 
-// 核心动态规划算法 - BuildPostOffice的GPU实现
+//- BuildPostOffice GPU
 __device__ int buildPostOffice_GPU32(
     const int *distribution,
     int num,
@@ -51,11 +51,11 @@ __device__ int buildPostOffice_GPU32(
         return INT_MAX;
     }
     
-    // 动态规划状态数组 - 使用栈上分配避免动态内存
-    int dp[32][16]; // dp[i][j] = 前i个位置放j个邮局的最小代价
-    int pre[32][16]; // pre[i][j] = dp[i][j]对应的前一个邮局位置
+    //translated comment
+    int dp[32][16]; //dp[i][j] = i j
+    int pre[32][16]; //pre[i][j] = dp[i][j]
     
-    // 初始化DP数组
+    //translated comment
     for (int i = 0; i < 32; i++) {
         for (int j = 0; j < 16; j++) {
             dp[i][j] = INT_MAX;
@@ -63,36 +63,36 @@ __device__ int buildPostOffice_GPU32(
         }
     }
     
-    // 第0个位置是第0个邮局，此时状态为0
+    //translated comment
     dp[0][0] = 0;
     pre[0][0] = -1;
     
-    // 动态规划填表
+    //translated comment
     for (int i = 1; i < 32; ++i) {
         if (distribution[i] == 0) {
-            continue; // 跳过零位置
+            continue; //translated comment
         }
         
         for (int j = max(1, num + i - 32); j <= i && j < num; ++j) {
             if (j == 1 && i > 1) {
-                // 特殊情况：只有一个邮局
+                //translated comment
                 dp[i][j] = 0;
                 for (int k = 1; k < i; k++) {
                     dp[i][j] += distribution[k] * k;
                 }
                 pre[i][j] = 0;
             } else {
-                // 一般情况：多个邮局
+                //translated comment
                 if (pre_non_zeros_count[i] < j + 1 || 
                     post_non_zeros_count[i] < num - 1 - j) {
-                    continue; // 剪枝：不满足邮局数量约束
+                    continue; //translated comment
                 }
                 
                 int app_cost = INT_MAX;
                 int pre_k = 0;
                 
                 for (int k = j - 1; k <= i - 1; ++k) {
-                    // 检查位置k的有效性
+                    //translated comment
                     if ((distribution[k] == 0 && k > 0) || 
                         pre_non_zeros_count[k] < j || 
                         post_non_zeros_count[k] < num - j ||
@@ -109,7 +109,7 @@ __device__ int buildPostOffice_GPU32(
                         app_cost = sum;
                         pre_k = k;
                         if (sum == 0) {
-                            break; // 提前终止优化
+                            break; //translated comment
                         }
                     }
                 }
@@ -122,7 +122,7 @@ __device__ int buildPostOffice_GPU32(
         }
     }
     
-    // 寻找最优解
+    //translated comment
     int temp_total_app_cost = INT_MAX;
     int temp_best_last = INT_MAX;
     
@@ -148,10 +148,10 @@ __device__ int buildPostOffice_GPU32(
     }
     
     if (temp_best_last == INT_MAX) {
-        return INT_MAX; // 无解
+        return INT_MAX; //translated comment
     }
     
-    // 回溯构建邮局位置
+    //translated comment
     int temp_positions[16];
     int pos_count = 0;
     int current = temp_best_last;
@@ -164,12 +164,12 @@ __device__ int buildPostOffice_GPU32(
         j--;
     }
     
-    // 反转位置数组（回溯是逆序的）
+    //translated comment
     for (int i = 0; i < pos_count; i++) {
         out_positions[i] = temp_positions[pos_count - 1 - i];
     }
     
-    // 处理邮局数量扩展
+    //translated comment
     if (original_num > non_zeros_count) {
         int modifying_positions[16];
         int mod_count = 0;
@@ -191,7 +191,7 @@ __device__ int buildPostOffice_GPU32(
             }
         }
         
-        // 复制扩展后的结果
+        //translated comment
         for (int i = 0; i < mod_count; i++) {
             out_positions[i] = modifying_positions[i];
         }
@@ -201,14 +201,14 @@ __device__ int buildPostOffice_GPU32(
     return pos_count;
 }
 
-// 主要的初始化函数 - 完整实现CPU版本逻辑
+//- CPU
 __device__ int initRoundAndRepresentation32(
     const int *distribution,
     int *representation,
     int *round,
     int *out_positions
 ) {
-    // 1. 计算总数和非零位置信息
+    //translated comment
     int pre_non_zeros_count[32];
     int post_non_zeros_count[32];
     int total_count, non_zeros_count;
@@ -218,17 +218,17 @@ __device__ int initRoundAndRepresentation32(
         &total_count, &non_zeros_count
     );
     
-    // 2. 遍历不同的z值，寻找最优解
-    int max_z = min(kPositionLength2Bits[non_zeros_count], 4); // 最多4个bit
+    //translated comment
+    int max_z = min(kPositionLength2Bits[non_zeros_count], 4); //4 bit
     int total_cost = INT_MAX;
     int best_positions[16];
     int best_positions_count = 0;
     
     for (int z = 0; z <= max_z; ++z) {
         int present_cost = total_count * z;
-        if (present_cost >= total_cost) break; // 提前终止
+        if (present_cost >= total_cost) break; //translated comment
         
-        int num = kPow2z[z]; // 邮局数量 = 2^z
+        int num = kPow2z[z]; //translated comment
         int temp_positions[16];
         
         int pos_count = buildPostOffice_GPU32(
@@ -238,10 +238,10 @@ __device__ int initRoundAndRepresentation32(
         );
         
         if (pos_count > 0 && pos_count <= 16) {
-            // 计算总代价（需要重新计算应用代价）
+            //translated comment
             int app_cost = 0;
             
-            // 简化的代价计算
+            //translated comment
             for (int i = 0; i < 32; i++) {
                 if (distribution[i] > 0) {
                     int min_dist = INT_MAX;
@@ -266,7 +266,7 @@ __device__ int initRoundAndRepresentation32(
         }
     }
     
-    // 3. 构建representation和round数组
+    //3. representation round
     for (int i = 0; i < 32; i++) {
         representation[i] = 0;
         round[i] = 0;
@@ -278,19 +278,19 @@ __device__ int initRoundAndRepresentation32(
         int pos_idx = 1;
         
         for (int j = 1; j < 32; ++j) {
-            // 使用CPU版本的"magic code"技术
+            //CPU "magic code"
             int magic_code = (pos_idx < best_positions_count && j == best_positions[pos_idx]) ? 1 : 0;
             representation[j] = representation[j - 1] + magic_code;
             round[j] = magic_code ? j : round[j - 1];
             pos_idx += magic_code;
         }
         
-        // 输出最终位置
+        //translated comment
         for (int i = 0; i < best_positions_count; i++) {
             out_positions[i] = best_positions[i];
         }
     } else {
-        // 默认情况
+        //translated comment
         out_positions[0] = 0;
         best_positions_count = 1;
     }
@@ -303,15 +303,15 @@ __device__ int write_positions_device32(
     const int *positions,
     int positions_len
 ) {
-    // 限制范围
+    //translated comment
     if (positions_len < 0) positions_len = 0;
     if (positions_len > 16) positions_len = 16;
     
-    // 写入位置数量（4位）
+    //translated comment
     write(writer, positions_len, 4);
     int total_bits = 4;
     
-    // 写入每个位置（5位each）
+    //（5 each）
     for (int i = 0; i < positions_len; i++) {
         int pos = positions[i];
         if (pos < 0) pos = 0;
@@ -324,7 +324,7 @@ __device__ int write_positions_device32(
     return total_bits;
 }
 
-// 验证函数
+//translated comment
 __device__ bool validate_distribution32(const int *distribution) {
     int total = 0;
     int non_zero_count = 0;
@@ -342,7 +342,7 @@ __device__ bool validate_distribution32(const int *distribution) {
     return (total <= 10000000 && non_zero_count <= 32);
 }
 
-// 调试函数
+//translated comment
 __device__ void debug_print_post_office_result32(
     const int *positions, int count, int thread_id
 ) {

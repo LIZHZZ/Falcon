@@ -84,19 +84,19 @@ private:
     __device__ __forceinline__ void nextValue() {
         DOUBLE value;
         
-        // 修复：正确处理所有编码情况
+        //translated comment
         int first_bit = read_bit();
         
         if (first_bit == 1) {
-            // 可能是 '1' (重用) 或者 '10' (值相同) 或者 '11'
+            //translated comment
             int second_bit = read_bit();
             
             if (second_bit == 0) {
-                // case '10' - 这应该不会发生在XOR层，但为了安全处理
+                //case '10' - XOR ，
                 endOfStream = true;
                 return;
             } else {
-                // case '11' - 这也不应该发生在XOR层
+                //case '11' - XOR
                 endOfStream = true; 
                 return;
             }
@@ -105,7 +105,7 @@ private:
             int second_bit = read_bit();
             
             if (second_bit == 0) {
-                // case '00' - 新的leading/trailing
+                //case '00' - leading/trailing
                 int leadAndTrail = read_int(leadingBitsPerValue + trailingBitsPerValue);
                 int lead = leadAndTrail >> trailingBitsPerValue;
                 int trail = leadAndTrail & ((1 << trailingBitsPerValue) - 1);
@@ -132,8 +132,8 @@ private:
                     endOfStream = true;
                 }
             } else {
-                // case '01' - 值相同，不需要读取任何数据
-                // storedVal保持不变
+                //case '01' - ，
+                //storedVal
             }
         }
     }
@@ -174,8 +174,8 @@ public:
     }
 };
 
-// 等一下，我重新分析CPU版本的逻辑...
-// 让我修正XOR解压器以完全匹配CPU版本
+//， CPU ...
+//XOR CPU
 class ElfStarXORDecompressor_CPU_Compatible {
 private:
     DOUBLE storedVal = {.i = 0};
@@ -253,13 +253,13 @@ private:
         }
     }
 
-    // 完全按照CPU版本的nextValue逻辑
+    //CPU nextValue
     __device__ __forceinline__ void nextValue() {
         DOUBLE value;
         int centerBits;
 
         if (read_bit() == 1) {
-            // case 1: 重用leading/trailing
+            //case 1: leading/trailing
             centerBits = 64 - storedLeadingZeros - storedTrailingZeros;
             if (centerBits > 0 && centerBits <= 64) {
                 value.i = read_long(centerBits) << storedTrailingZeros;
@@ -273,7 +273,7 @@ private:
                 endOfStream = true;
             }
         } else if (read_bit() == 0) {
-            // case 00: 新的leading/trailing
+            //case 00: leading/trailing
             int leadAndTrail = read_int(leadingBitsPerValue + trailingBitsPerValue);
             int lead = leadAndTrail >> trailingBitsPerValue;
             int trail = ~(0xffffffff << trailingBitsPerValue) & leadAndTrail;
@@ -300,8 +300,8 @@ private:
                 endOfStream = true;
             }
         }
-        // CPU版本没有处理'01'的情况，这可能导致问题
-        // 但为了完全兼容，我们保持相同的行为
+        //CPU '01' ，
+        //translated comment
     }
 
 public:
@@ -425,12 +425,12 @@ __device__ int decompress_method_final_fix(
         return 0;
     }
     
-    // 确保内存对齐
+    //translated comment
     uint32_t num_elements;
     if (((uintptr_t)d_in) % 4 == 0) {
         num_elements = ((uint32_t*)d_in)[0];
     } else {
-        // 手动读取4字节
+        //translated comment
         uint8_t bytes[4];
         for (int i = 0; i < 4; i++) {
             bytes[i] = d_in[i];
@@ -481,7 +481,7 @@ __global__ void decompress_kernel(const uint8_t* d_in_data,
         p_in_chunk, in_chunk_len_bytes, p_out_chunk, chunk_idx);
     
     // if (chunk_idx < 3) {
-    //     printf("块%d解压: %lld字节 -> %d元素\n", 
+    //printf(" %d : %lld -> %d \n",
     //            chunk_idx, (long long)in_chunk_len_bytes, decompressed_count);
     // }
 }

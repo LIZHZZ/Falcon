@@ -1,5 +1,5 @@
 //
-// test_elf_star.cu - ELF Star 压缩算法测试程序
+//test_elf_star.cu - ELF Star
 // Created by lizhzz on 25-7-20.
 //
 
@@ -13,14 +13,14 @@
 
 #include "Elf_Star_g_Kernel.cuh"
 
-// 测试数据生成函数
+//translated comment
 std::vector<double> generate_test_data(size_t size, int pattern = 0) {
     std::vector<double> data(size);
     std::random_device rd;
     std::mt19937 gen(rd());
     
     switch (pattern) {
-        case 0: // 随机数据
+        case 0: //translated comment
         {
             std::normal_distribution<double> dis(0.0, 1.0);
             for (size_t i = 0; i < size; ++i) {
@@ -28,31 +28,31 @@ std::vector<double> generate_test_data(size_t size, int pattern = 0) {
             }
             break;
         }
-        case 1: // 递增序列
+        case 1: //translated comment
         {
             for (size_t i = 0; i < size; ++i) {
                 data[i] = static_cast<double>(i) + 0.1;
             }
             break;
         }
-        case 2: // 周期性数据
+        case 2: //translated comment
         {
             for (size_t i = 0; i < size; ++i) {
                 data[i] = sin(2.0 * M_PI * i / 100.0) * 1000.0;
             }
             break;
         }
-        case 3: // 稀疏数据 (很多零)
+        case 3: //translated comment
         {
             std::uniform_real_distribution<double> dis(0.0, 1.0);
             std::uniform_real_distribution<double> val_dis(-1000.0, 1000.0);
             for (size_t i = 0; i < size; ++i) {
-                data[i] = (dis(gen) < 0.1) ? val_dis(gen) : 0.0;  // 10%概率非零
+                data[i] = (dis(gen) < 0.1) ? val_dis(gen) : 0.0;  //translated comment
             }
             break;
         }
         default:
-            // 默认填充为0
+            //translated comment
             std::fill(data.begin(), data.end(), 0.0);
             break;
     }
@@ -60,7 +60,7 @@ std::vector<double> generate_test_data(size_t size, int pattern = 0) {
     return data;
 }
 
-// 验证解压缩结果的正确性
+//translated comment
 bool verify_decompression(const std::vector<double>& original, 
                          const double* decompressed, 
                          size_t size,
@@ -79,7 +79,7 @@ bool verify_decompression(const std::vector<double>& original,
         if (error > tolerance) {
             error_count++;
             max_error = std::max(max_error, error);
-            if (error_count <= 10) {  // 只显示前10个错误
+            if (error_count <= 10) {  //translated comment
                 std::cout << "位置 " << i << ": 原始=" << original[i] 
                           << ", 解压=" << decompressed[i] 
                           << ", 误差=" << error << std::endl;
@@ -96,14 +96,14 @@ bool verify_decompression(const std::vector<double>& original,
     return true;
 }
 
-// 单个测试用例
+//translated comment
 bool run_test_case(const std::string& test_name, 
                    const std::vector<double>& test_data) {
     std::cout << "\n=== 测试用例: " << test_name << " ===\n";
     std::cout << "数据大小: " << test_data.size() << " 个double元素 ("
               << test_data.size() * sizeof(double) << " 字节)\n";
     
-    // 1. 压缩测试
+    //translated comment
     uint8_t* compressed_data = nullptr;
     ssize_t compressed_len = 0;
     
@@ -122,14 +122,14 @@ bool run_test_case(const std::string& test_name,
     
     std::cout << "✓ 压缩成功: " << compress_result << " 字节\n";
     
-    // 计算压缩比
+    //translated comment
     double compression_ratio = static_cast<double>(test_data.size() * sizeof(double)) / compress_result;
     std::cout << "压缩比: " << std::fixed << std::setprecision(2) 
               << compression_ratio << ":1 (" 
               << (1.0 - static_cast<double>(compress_result) / (test_data.size() * sizeof(double))) * 100.0 
               << "% 空间节省)\n";
     
-    // 2. 解压缩测试
+    //translated comment
     double* decompressed_data = nullptr;
     ssize_t decompressed_len = 0;
     
@@ -149,7 +149,7 @@ bool run_test_case(const std::string& test_name,
     
     std::cout << "✓ 解压缩成功: " << decompress_result << " 个元素\n";
     
-    // 3. 验证结果正确性
+    //translated comment
     bool verification_passed = verify_decompression(
         test_data, decompressed_data, decompressed_len);
     
@@ -159,7 +159,7 @@ bool run_test_case(const std::string& test_name,
         std::cout << "❌ 数据验证失败\n";
     }
     
-    // 4. 性能统计
+    //translated comment
     auto compress_duration = std::chrono::duration_cast<std::chrono::microseconds>(
         compress_time - start_time).count();
     auto decompress_duration = std::chrono::duration_cast<std::chrono::microseconds>(
@@ -168,19 +168,19 @@ bool run_test_case(const std::string& test_name,
     std::cout << "压缩耗时: " << compress_duration << " μs\n";
     std::cout << "解压缩耗时: " << decompress_duration << " μs\n";
     
-    // 清理内存
+    //translated comment
     if (compressed_data) free(compressed_data);
     if (decompressed_data) free(decompressed_data);
     
     return verification_passed;
 }
 
-// 主测试函数
+//translated comment
 int main() {
     std::cout << "ELF Star 压缩算法测试程序\n";
     std::cout << "============================\n";
     
-    // 检查CUDA设备
+    //CUDA
     int device_count = 0;
     cudaError_t cuda_status = cudaGetDeviceCount(&device_count);
     if (cuda_status != cudaSuccess) {
@@ -196,28 +196,28 @@ int main() {
         std::cout << "使用设备: " << prop.name << std::endl;
     }
     
-    // 运行测试用例
+    //translated comment
     std::vector<std::pair<std::string, std::vector<double>>> test_cases;
     
-    // 测试用例1: 小规模随机数据
+    //translated comment
     test_cases.emplace_back("小规模随机数据", generate_test_data(1000, 0));
     
-    // 测试用例2: 中等规模递增序列
+    //translated comment
     test_cases.emplace_back("中等规模递增序列", generate_test_data(10000, 1));
     
-    // 测试用例3: 周期性数据
+    //translated comment
     test_cases.emplace_back("周期性数据", generate_test_data(5000, 2));
     
-    // 测试用例4: 稀疏数据
+    //translated comment
     test_cases.emplace_back("稀疏数据", generate_test_data(8000, 3));
     
-    // 测试用例5: 大规模数据
+    //translated comment
     test_cases.emplace_back("大规模随机数据", generate_test_data(100000, 0));
     
-    // 测试用例6: 边界情况 - 单元素
+    //translated comment
     test_cases.emplace_back("单元素数据", std::vector<double>{42.0});
     
-    // 测试用例7: 边界情况 - 全零数据
+    //translated comment
     test_cases.emplace_back("全零数据", std::vector<double>(1000, 0.0));
     
     int passed_tests = 0;
@@ -229,7 +229,7 @@ int main() {
         }
     }
     
-    // 测试总结
+    //translated comment
     std::cout << "\n============================\n";
     std::cout << "测试总结: " << passed_tests << "/" << total_tests << " 通过\n";
     

@@ -143,7 +143,7 @@
 //         flsgpu::host::ALPExtendedColumn<double> host_extended_column = host_base_column.create_extended_column();
 //         flsgpu::device::ALPExtendedColumn<double> device_extended_column;
 //         // decomp_start = std::chrono::high_resolution_clock::now();
-//         // 数据转移
+//translated comment
 //         try
 //         {
 //             device_extended_column = host_extended_column.copy_to_device();
@@ -159,7 +159,7 @@
         
 //         float kernel_elapsed_ms = 0.0f;
 //         double *host_decompressed_data = nullptr;
-//         // 解压缩
+//translated comment
 //         try
 //         {
 //             cudaEventRecord(kernel_start);
@@ -221,7 +221,7 @@
 //             std::cout << "✓ Extended format data verification succeeded" << std::endl;
 //         }
 
-//         // 结果返回
+//translated comment
 //         const double comp_tp = compression_time_ms > 0.0 ? (original_size / (1024.0 * 1024.0 * 1024.0)) / (compression_time_ms / 1000.0) : 0.0;
 //         const double decomp_tp = decompression_time_ms > 0.0 ? (original_size / (1024.0 * 1024.0 * 1024.0)) / (decompression_time_ms / 1000.0) : 0.0;
 
@@ -262,7 +262,7 @@
 
 //         float kernel_elapsed_ms = 0.0f;
 //         double *host_decompressed_data = nullptr;
-//         // 基础版本解压缩
+//translated comment
 //         try
 //         {
 //             cudaEventRecord(kernel_start);
@@ -279,12 +279,12 @@
 //             cudaDeviceSynchronize();
 //             if (!host_decompressed_data)
 //             {
-//                 throw std::runtime_error("基础GPU解压返回 nullptr");
+//throw std::runtime_error(" GPU nullptr");
 //             }
 //         }
 //         catch (const std::exception &e)
 //         {
-//             std::cerr << "❌ 基础GPU解压失败: " << e.what() << std::endl;
+//std::cerr << "❌ GPU : " << e.what() << std::endl;
 //             if (host_decompressed_data)
 //                 delete[] host_decompressed_data;
 //             flsgpu::host::free_column(device_base_column);
@@ -293,18 +293,18 @@
 //             cudaEventDestroy(kernel_stop);
 //             return CompressionInfo{};
 //         }
-//         // 时间统计
+//translated comment
 //         auto decomp_end = std::chrono::high_resolution_clock::now();
 //         const double decompression_time_ms = std::chrono::duration<double, std::milli>(decomp_end - decomp_start).count();
 //         const double decompression_kernel_time_ms = static_cast<double>(kernel_elapsed_ms);
 
-//         // 数据验证
+//translated comment
 //         const uint8_t *padded_bytes = reinterpret_cast<const uint8_t *>(data_ptr);
 //         const uint8_t *decomp_bytes = reinterpret_cast<const uint8_t *>(host_decompressed_data);
 //         const size_t decomp_size = device_base_column.n_values * sizeof(double);
 //         if (memcmp(padded_bytes, decomp_bytes, decomp_size) != 0)
 //         {
-//             std::cout << "❌ 基础格式数据验证失败" << std::endl;
+//std::cout << "❌ " << std::endl;
 //             const double *p = data_ptr;
 //             const double *d = host_decompressed_data;
 //             int shown = 0;
@@ -312,17 +312,17 @@
 //             {
 //                 if (std::abs(p[i] - d[i]) > 1e-10)
 //                 {
-//                     std::cout << "  不匹配[" << i << "]: " << p[i] << " vs " << d[i] << std::endl;
+//std::cout << " [" << i << "]: " << p[i] << " vs " << d[i] << std::endl;
 //                     ++shown;
 //                 }
 //             }
 //         }
 //         else
 //         {
-//             std::cout << "✓ 基础格式数据验证成功" << std::endl;
+//std::cout << "✓ " << std::endl;
 //         }
 
-//         // 结果返回
+//translated comment
 //         const double comp_tp = compression_time_ms > 0.0 ? (original_size / (1024.0 * 1024.0 * 1024.0)) / (compression_time_ms / 1000.0) : 0.0;
 //         const double decomp_tp = decompression_time_ms > 0.0 ? (original_size / (1024.0 * 1024.0 * 1024.0)) / (decompression_time_ms / 1000.0) : 0.0;
 
@@ -347,11 +347,11 @@
 //     }
 // }
 
-// // ==================== 文件测试包装函数 ====================
+//translated comment
 // CompressionInfo test_compression(const std::string &file_path)
 // {
 //     std::vector<double> oriData = read_data(file_path);
-//     return comp_ALP_G(oriData); // 调用扩展版实现
+//return comp_ALP_G(oriData); //
 // }
 
 // CompressionInfo test_beta_compression(const std::string &file_path, int beta)
@@ -360,7 +360,7 @@
 //     return comp_ALP_G(oriData);
 // }
 
-// // ==================== Google Test 用例(保持结构一致) ====================
+//// ==================== Google Test ( ) ====================
 // TEST(ALPGExtendedCompressorTest, CompressionDecompression)
 // {
 //     std::string dir_path = "../test/data/mew_tsbs";
@@ -385,10 +385,10 @@
 //     }
 // }
 
-// // ==================== 主程序 ====================
+//translated comment
 // int main(int argc, char *argv[])
 // {
-//     cudaFree(0); // 初始化 CUDA
+//cudaFree(0); // CUDA
 
 //     if (argc < 2)
 //     {
@@ -401,7 +401,7 @@
 //     if (arg == "--dir" && argc >= 3)
 //     {
 //         std::string dir_path = argv[2];
-//         std::cout << "📁 扩展格式处理目录: " << dir_path << std::endl;
+//std::cout << "📁 : " << dir_path << std::endl;
 
 //         std::vector<std::string> csv_files;
 //         for (const auto &entry : fs::directory_iterator(dir_path))
@@ -413,25 +413,25 @@
 //         }
 //         if (csv_files.empty())
 //         {
-//             std::cerr << "❌ 未找到 CSV 文件" << std::endl;
+//std::cerr << "❌ CSV " << std::endl;
 //             return 1;
 //         }
 
-//         std::cout << "找到 " << csv_files.size() << " 个CSV文件" << std::endl;
-//         std::cout << "\n=== 预热阶段(扩展) ===" << std::endl;
+//std::cout << " " << csv_files.size() << " CSV " << std::endl;
+//std::cout << "\n=== ( ) ===" << std::endl;
 //         test_compression(csv_files[0]);
 //         cudaDeviceSynchronize();
 
 //         for (const auto &file_path : csv_files)
 //         {
 //             std::cout << "\n========================================" << std::endl;
-//             std::cout << "文件: " << fs::path(file_path).filename() << std::endl;
+//std::cout << " : " << fs::path(file_path).filename() << std::endl;
 //             std::cout << "========================================" << std::endl;
 
 //             CompressionInfo total_result;
 //             for (int i = 0; i < 3; ++i)
 //             {
-//                 std::cout << "\n--- 迭代 " << (i + 1) << " ---" << std::endl;
+//std::cout << "\n--- " << (i + 1) << " ---" << std::endl;
 //                 CompressionInfo r = test_compression(file_path);
 //                 total_result += r;
 //                 cudaDeviceSynchronize();
@@ -444,7 +444,7 @@
 //     else if (arg == "--file-beta" && argc >= 3)
 //     {
 //         std::string file_path = argv[2];
-//         std::cout << "🔬 扩展格式 Beta 参数扫描: " << file_path << std::endl;
+//std::cout << "🔬 Beta : " << file_path << std::endl;
 //         // test_compression(file_path);
 //         cudaDeviceSynchronize();
 //         for (int beta = 4; beta <= 17; ++beta)
@@ -467,8 +467,8 @@
 //     else
 //     {
 //         std::string file_path = arg;
-//         std::cout << "📂 扩展格式处理文件: " << file_path << std::endl;
-//         std::cout << "\n=== 预热(扩展) ===" << std::endl;
+//std::cout << "📂 : " << file_path << std::endl;
+//std::cout << "\n=== ( ) ===" << std::endl;
 //         test_compression(file_path);
 //         cudaDeviceSynchronize();
 
@@ -476,7 +476,7 @@
 //         for (int i = 0; i < 3; ++i)
 //         {
 //             std::cout << "\n========================================" << std::endl;
-//             std::cout << "迭代 " << (i + 1) << std::endl;
+//std::cout << " " << (i + 1) << std::endl;
 //             std::cout << "========================================" << std::endl;
 //             CompressionInfo r = test_compression(file_path);
 //             total_result += r;
@@ -491,7 +491,7 @@
 
 
 
-// 官方实现的版本测试 自选扩展版本
+//translated comment
 #include <gtest/gtest.h>
 #include <fstream>
 #include <vector>
@@ -507,7 +507,7 @@
 #include <numeric>
 #include <cassert>
 
-// ALP-G 头文件
+//ALP-G
 #include "alp/alp-bindings.cuh"
 #include "flsgpu/flsgpu-api.cuh"
 #include "flsgpu/structs.cuh"
@@ -521,7 +521,7 @@
 
 namespace fs = std::filesystem;
 
-// 函数声明(保持与基础版文件一致命名,内部改为扩展格式)
+//translated comment
 CompressionInfo comp_ALP_G(std::vector<double> oriData);
 CompressionInfo test_compression(const std::string &file_path);
 CompressionInfo test_beta_compression(const std::string &file_path, int beta);
@@ -562,7 +562,7 @@ bool can_use_extended(const flsgpu::host::ALPColumn<T> &column)
     return true;
 }
 
-// ==================== 扩展版压缩 + GPU 解压 ====================
+//==================== + GPU ====================
 CompressionInfo comp_ALP_G(std::vector<double> oriData)
 {
     const size_t original_num_elements = oriData.size();
@@ -573,9 +573,9 @@ CompressionInfo comp_ALP_G(std::vector<double> oriData)
         return CompressionInfo{};
     }
 
-    // 与基础版统一的参数
+    //translated comment
     constexpr size_t VECTOR_SIZE = 1024;
-    constexpr unsigned UNPACK_N_VECTORS = 1; // 安全配置
+    constexpr unsigned UNPACK_N_VECTORS = 1; //translated comment
     constexpr size_t N_LANES_DOUBLE = 16;
     constexpr size_t THREADS_PER_WARP = 32;
     constexpr size_t N_WARPS_PER_BLOCK = 2;
@@ -587,8 +587,8 @@ CompressionInfo comp_ALP_G(std::vector<double> oriData)
     std::vector<double> paddedData;
     const double *data_ptr = oriData.data();
 
-    // 1.数据预处理
-    // 填充到线程块向量组的倍数
+    //translated comment
+    //translated comment
     size_t n_vecs = (num_elements + VECTOR_SIZE - 1) / VECTOR_SIZE;
     size_t n_vecs_padded = ((n_vecs + VECTORS_PER_BLOCK - 1) / VECTORS_PER_BLOCK) * VECTORS_PER_BLOCK;
     size_t num_elements_padded = n_vecs_padded * VECTOR_SIZE;
@@ -601,7 +601,7 @@ CompressionInfo comp_ALP_G(std::vector<double> oriData)
         paddedData.insert(paddedData.end(), pad_needed, oriData.back());
         data_ptr = paddedData.data();
     }
-    // 2.压缩阶段
+    //translated comment
     auto encode_start = std::chrono::high_resolution_clock::now();
     flsgpu::host::ALPColumn<double> host_base_column;
     try
@@ -613,12 +613,12 @@ CompressionInfo comp_ALP_G(std::vector<double> oriData)
         std::cerr << "❌ 基础压缩失败: " << e.what() << std::endl;
         return CompressionInfo{};
     }
-    // 计时
+    //translated comment
     auto encode_end = std::chrono::high_resolution_clock::now();
     const double compression_time_ms = std::chrono::duration<double, std::milli>(encode_end - encode_start).count();
     constexpr double compression_kernel_time_ms = 0.0;
     
-    // 判断使用扩展版 or 基础版
+    //translated comment
     const bool use_extended = can_use_extended(host_base_column);
     const size_t compressed_size = use_extended ? host_base_column.compressed_size_bytes_alp_extended
                                                 : host_base_column.compressed_size_bytes_alp;
@@ -626,14 +626,14 @@ CompressionInfo comp_ALP_G(std::vector<double> oriData)
     std::cout << "✓ 压缩完成(" << (use_extended ? "扩展" : "基础") << "): "
               << compressed_size << " bytes, 比率=" << compression_ratio << "x" << std::endl;
 
-    // 创建 CUDA 事件用于计时
+    //CUDA
     cudaEvent_t kernel_start{};
     cudaEvent_t kernel_stop{};
     cudaEventCreate(&kernel_start);
     cudaEventCreate(&kernel_stop);
     double format_prepare_time_ms = 0.0;
     auto decomp_start = std::chrono::high_resolution_clock::now();
-    // 解压过程
+    //translated comment
     if (use_extended)
     {
 
@@ -644,7 +644,7 @@ CompressionInfo comp_ALP_G(std::vector<double> oriData)
             std::chrono::duration<double, std::milli>(format_prepare_end - format_prepare_start).count();
         flsgpu::device::ALPExtendedColumn<double> device_extended_column;
         // decomp_start = std::chrono::high_resolution_clock::now();
-        // 数据转移
+        //translated comment
         try
         {
             device_extended_column = host_extended_column.copy_to_device();
@@ -660,7 +660,7 @@ CompressionInfo comp_ALP_G(std::vector<double> oriData)
         
         float kernel_elapsed_ms = 0.0f;
         double *host_decompressed_data = nullptr;
-        // 使用与 benchmark-compressors.cu 相同的 GALP 类型别名
+        //benchmark-compressors.cu GALP
         using GALPDecomp = flsgpu::device::ALPDecompressor<
             double, UNPACK_N_VECTORS,
             flsgpu::device::BitUnpackerStatefulBranchless<
@@ -672,18 +672,18 @@ CompressionInfo comp_ALP_G(std::vector<double> oriData)
         const size_t n_vecs_ext = utils::get_n_vecs_from_size(device_extended_column.n_values);
         const ThreadblockMapping<double> mapping(UNPACK_N_VECTORS, n_vecs_ext);
 
-        // GPU 输出缓冲（不拷回 CPU，消除 D2H 开销）
+        //GPU （ CPU， D2H ）
         double *d_out = nullptr;
         cudaMalloc(&d_out, num_elements * sizeof(double));
 
-        // 预热 1 次
+        //translated comment
         // kernels::device::decompress_column<double, UNPACK_N_VECTORS, 1,
         //                                    GALPDecomp,
         //                                    flsgpu::device::ALPExtendedColumn<double>>
         //     <<<mapping.n_blocks, mapping.N_THREADS_PER_BLOCK>>>(device_extended_column, d_out);
         // cudaDeviceSynchronize();
 
-        // 正式计时：仅核函数执行时间
+        //translated comment
         cudaEventRecord(kernel_start);
         kernels::device::decompress_column<double, UNPACK_N_VECTORS, 1,
                                            GALPDecomp,
@@ -695,19 +695,19 @@ CompressionInfo comp_ALP_G(std::vector<double> oriData)
         cudaEventElapsedTime(&kernel_elapsed_ms, kernel_start, kernel_stop);
         cudaDeviceSynchronize();
 
-        // D2H 拷贝用于验证（不计入核函数时间）
+        //translated comment
         host_decompressed_data = new double[num_elements];
         cudaMemcpy(host_decompressed_data, d_out, num_elements * sizeof(double), cudaMemcpyDeviceToHost);
         cudaFree(d_out);
 
         auto decomp_end = std::chrono::high_resolution_clock::now();
 
-        // 时间统计
+        //translated comment
         const double decompression_time_ms = std::chrono::duration<double, std::milli>(decomp_end - decomp_start).count();
         const double decomp_h2d_decode_d2h_time_ms = std::max(0.0, decompression_time_ms - format_prepare_time_ms);
         const double decompression_kernel_time_ms = static_cast<double>(kernel_elapsed_ms);
         
-        // 验证解压数据
+        //translated comment
         const uint8_t *padded_bytes = reinterpret_cast<const uint8_t *>(data_ptr);
         const uint8_t *decomp_bytes = reinterpret_cast<const uint8_t *>(host_decompressed_data);
         const size_t decomp_size = device_extended_column.n_values * sizeof(double);
@@ -731,7 +731,7 @@ CompressionInfo comp_ALP_G(std::vector<double> oriData)
             std::cout << "✓ 扩展格式数据验证成功" << std::endl;
         }
 
-        // 结果返回
+        //translated comment
         const double comp_tp = compression_time_ms > 0.0 ? (original_size / 1e9) / (compression_time_ms / 1000.0) : 0.0;
         const double decomp_tp = decompression_time_ms > 0.0 ? (original_size / 1e9) / (decompression_time_ms / 1000.0) : 0.0;
         const double decomp_tp_h2d_decode_d2h =
@@ -761,7 +761,7 @@ CompressionInfo comp_ALP_G(std::vector<double> oriData)
         return result;
     }
     else{
-        // 数据传输
+        //translated comment
         flsgpu::device::ALPColumn<double> device_base_column;
         try
         {
@@ -777,7 +777,7 @@ CompressionInfo comp_ALP_G(std::vector<double> oriData)
 
         float kernel_elapsed_ms = 0.0f;
         double *host_decompressed_data = nullptr;
-        // 使用与 benchmark-compressors.cu 相同的 ALP 类型别名
+        //benchmark-compressors.cu ALP
         using ALPDecomp = flsgpu::device::ALPDecompressor<
             double, UNPACK_N_VECTORS,
             flsgpu::device::BitUnpackerStatefulBranchless<
@@ -789,18 +789,18 @@ CompressionInfo comp_ALP_G(std::vector<double> oriData)
         const size_t n_vecs_base = utils::get_n_vecs_from_size(device_base_column.n_values);
         const ThreadblockMapping<double> mapping(UNPACK_N_VECTORS, n_vecs_base);
 
-        // GPU 输出缓冲（不拷回 CPU，消除 D2H 开销）
+        //GPU （ CPU， D2H ）
         double *d_out = nullptr;
         cudaMalloc(&d_out, num_elements * sizeof(double));
 
-        // 预热 1 次
+        //translated comment
         // kernels::device::decompress_column<double, UNPACK_N_VECTORS, 1,
         //                                    ALPDecomp,
         //                                    flsgpu::device::ALPColumn<double>>
         //     <<<mapping.n_blocks, mapping.N_THREADS_PER_BLOCK>>>(device_base_column, d_out);
         // cudaDeviceSynchronize();
 
-        // 正式计时：仅核函数执行时间
+        //translated comment
         cudaEventRecord(kernel_start);
         kernels::device::decompress_column<double, UNPACK_N_VECTORS, 1,
                                            ALPDecomp,
@@ -812,16 +812,16 @@ CompressionInfo comp_ALP_G(std::vector<double> oriData)
         cudaEventElapsedTime(&kernel_elapsed_ms, kernel_start, kernel_stop);
         cudaDeviceSynchronize();
 
-        // D2H 拷贝用于验证（不计入核函数时间）
+        //translated comment
         host_decompressed_data = new double[num_elements];
         cudaMemcpy(host_decompressed_data, d_out, num_elements * sizeof(double), cudaMemcpyDeviceToHost);
         cudaFree(d_out);
-        // 时间统计
+        //translated comment
         auto decomp_end = std::chrono::high_resolution_clock::now();
         const double decompression_time_ms = std::chrono::duration<double, std::milli>(decomp_end - decomp_start).count();
         const double decompression_kernel_time_ms = static_cast<double>(kernel_elapsed_ms);
 
-        // 数据验证
+        //translated comment
         const uint8_t *padded_bytes = reinterpret_cast<const uint8_t *>(data_ptr);
         const uint8_t *decomp_bytes = reinterpret_cast<const uint8_t *>(host_decompressed_data);
         const size_t decomp_size = device_base_column.n_values * sizeof(double);
@@ -845,7 +845,7 @@ CompressionInfo comp_ALP_G(std::vector<double> oriData)
             std::cout << "✓ 基础格式数据验证成功" << std::endl;
         }
 
-        // 结果返回
+        //translated comment
         const double comp_tp = compression_time_ms > 0.0 ? (original_size / 1e9) / (compression_time_ms / 1000.0) : 0.0;
         const double decomp_tp = decompression_time_ms > 0.0 ? (original_size / 1e9) / (decompression_time_ms / 1000.0) : 0.0;
         std::cout << "  格式准备时间(format_prepare): 0 ms" << std::endl;
@@ -873,11 +873,11 @@ CompressionInfo comp_ALP_G(std::vector<double> oriData)
     }
 }
 
-// ==================== 文件测试包装函数 ====================
+//translated comment
 CompressionInfo test_compression(const std::string &file_path)
 {
     std::vector<double> oriData = read_data(file_path);
-    return comp_ALP_G(oriData); // 调用扩展版实现
+    return comp_ALP_G(oriData); //translated comment
 }
 
 CompressionInfo test_beta_compression(const std::string &file_path, int beta)
@@ -886,7 +886,7 @@ CompressionInfo test_beta_compression(const std::string &file_path, int beta)
     return comp_ALP_G(oriData);
 }
 
-// ==================== Google Test 用例(保持结构一致) ====================
+//==================== Google Test ( ) ====================
 TEST(ALPGExtendedCompressorTest, CompressionDecompression)
 {
     std::string dir_path = "../test/data/mew_tsbs";
@@ -911,10 +911,10 @@ TEST(ALPGExtendedCompressorTest, CompressionDecompression)
     }
 }
 
-// ==================== 主程序 ====================
+//translated comment
 int main(int argc, char *argv[])
 {
-    cudaFree(0); // 初始化 CUDA
+    cudaFree(0); //CUDA
 
     if (argc < 2)
     {

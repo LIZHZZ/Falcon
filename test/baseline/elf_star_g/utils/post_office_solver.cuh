@@ -22,10 +22,10 @@ static __device__ __constant__ int kPositionLength2Bits[] = {
 
 static __device__ __constant__ int kPow2z[] = {1, 2, 4, 8, 16, 32};
 
-__device__ int initRoundAndRepresentation(const int *distribution, // 输入：分布数组 (大小 64)
-                                          int *representation, // 输出：representation 数组 (大小 64)
-                                          int *round, // 输出：round 数组 (大小 64)
-                                          int *out_positions // 输出：找到的最佳 positions (大小 64, 空间足够)
+__device__ int initRoundAndRepresentation(const int *distribution, //translated comment
+                                          int *representation, //：representation ( 64)
+                                          int *round, //：round ( 64)
+                                          int *out_positions //： positions ( 64, )
 );
 __device__ int write_positions_device(
     BitWriter *writer,

@@ -3,10 +3,10 @@
 #include <cstdint>
 #include <cstring>
 
-// 核心类型定义
+//translated comment
 typedef uint64_t idx_t;
 
-// DuckDB API 宏定义
+//DuckDB API
 #ifndef DUCKDB_API
 #ifdef _WIN32
 #define DUCKDB_API __declspec(dllimport)
@@ -15,7 +15,7 @@ typedef uint64_t idx_t;
 #endif
 #endif
 
-// Debug断言宏
+//Debug
 #ifdef DEBUG
 #define D_ASSERT(condition) assert(condition)
 #else
@@ -24,7 +24,7 @@ typedef uint64_t idx_t;
 
 namespace alp_bench {
 
-// Load函数模板 - 用于快速内存读取
+//Load -
 template <class T>
 inline T Load(const uint8_t* ptr) {
 	T ret;

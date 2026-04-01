@@ -142,7 +142,7 @@ class ElfStarXORDecompressor {
  
      leadingBitsPerValue = 0;
      trailingBitsPerValue = 0;
-     // NOTE: 似乎没有必要 需要考虑这个数组的空间能否自己释放掉
+     //NOTE:
      for (int i = 0; i < leadingRepresentation.length(); i++) {
        leadingRepresentation[i] = 0;
      }
@@ -205,7 +205,7 @@ class ElfStarDecompressor {
       }
       output[i] = nextValue();
     }
-    // 更新，开始新的解压循环
+    //translated comment
     return len;
   }
 

@@ -22,12 +22,12 @@ private:
     
 public:
     /**
-     * 构造函数支持自定义范围和步长
-     * @param filename 输入文件名
-     * @param startSizeMB 起始大小（MB）
-     * @param endSizeMB 结束大小（MB）
-     * @param stepSizeMB 步长（MB）
-     * @param delim 分隔符，默认为逗号
+     *translated comment
+     *@param filename
+     *@param startSizeMB （MB）
+     *@param endSizeMB （MB）
+     *@param stepSizeMB （MB）
+     *@param delim ，
      */
     EnhancedCSVSplitter(const std::string& filename, 
                        double startSizeMB = 30.0, 
@@ -36,31 +36,31 @@ public:
                        char delim = ',') 
         : inputFilename(filename), delimiter(delim), totalColumns(0), totalRows(0) {
         
-        // 生成目标大小列表
+        //translated comment
         generateTargetSizes(startSizeMB, endSizeMB, stepSizeMB);
         
-        // 创建输出目录名
+        //translated comment
         createOutputDirectory();
     }
     
     /**
-     * 构造函数支持自定义大小列表
-     * @param filename 输入文件名
-     * @param customSizes 自定义大小列表（MB）
-     * @param delim 分隔符，默认为逗号
+     *translated comment
+     *@param filename
+     *@param customSizes （MB）
+     *@param delim ，
      */
     EnhancedCSVSplitter(const std::string& filename, 
                        const std::vector<double>& customSizes,
                        char delim = ',') 
         : inputFilename(filename), targetSizesInMB(customSizes), delimiter(delim), totalColumns(0), totalRows(0) {
         
-        // 创建输出目录名
+        //translated comment
         createOutputDirectory();
     }
     
 private:
     /**
-     * 生成目标大小列表
+     *translated comment
      */
     void generateTargetSizes(double startSizeMB, double endSizeMB, double stepSizeMB) {
         if (stepSizeMB <= 0) {
@@ -87,10 +87,10 @@ private:
     }
     
     /**
-     * 创建输出目录
+     *translated comment
      */
     void createOutputDirectory() {
-        // 提取原文件名（不含扩展名和路径）
+        //translated comment
         size_t lastDot = inputFilename.find_last_of('.');
         size_t lastSlash = inputFilename.find_last_of("/\\");
         
@@ -107,7 +107,7 @@ private:
         
         outputDirectory = baseName + "_split_output";
         
-        // 创建目录
+        //translated comment
         try {
             if (!fs::exists(outputDirectory)) {
                 fs::create_directory(outputDirectory);
@@ -117,12 +117,12 @@ private:
             }
         } catch (const std::exception& e) {
             std::cerr << "创建目录失败: " << e.what() << std::endl;
-            outputDirectory = "."; // 如果创建失败，使用当前目录
+            outputDirectory = "."; //translated comment
         }
     }
     
     /**
-     * 分析CSV文件结构，获取精确的数据量信息
+     *CSV ，
      */
     bool analyzeCSVStructure() {
         std::ifstream file(inputFilename);
@@ -133,14 +133,14 @@ private:
         
         std::cout << "正在分析CSV文件结构..." << std::endl;
         
-        // 读取头部
+        //translated comment
         if (!std::getline(file, headerLine)) {
             std::cerr << "无法读取文件头部" << std::endl;
             file.close();
             return false;
         }
         
-        // 计算列数
+        //translated comment
         std::stringstream ss(headerLine);
         std::string cell;
         totalColumns = 0;
@@ -148,7 +148,7 @@ private:
             totalColumns++;
         }
         
-        // 计算行数（不包括头部）
+        //translated comment
         totalRows = 0;
         std::string line;
         while (std::getline(file, line)) {
@@ -168,22 +168,22 @@ private:
     }
     
     /**
-     * 计算需要多少行数据来达到目标大小
+     *translated comment
      */
     size_t calculateRowsForTargetSize(double targetSizeMB) {
         double targetSizeBytes = targetSizeMB * 1024.0 * 1024.0;
         double bytesPerRow = totalColumns * sizeof(double);
         size_t targetRows = static_cast<size_t>(std::round(targetSizeBytes / bytesPerRow));
         
-        // 确保不超过总行数
+        //translated comment
         return std::min(targetRows, totalRows);
     }
     
     /**
-     * 生成输出文件名
+     *translated comment
      */
     std::string generateOutputFilename(double sizeInMB) {
-        // 提取原文件名（不含扩展名和路径）
+        //translated comment
         size_t lastDot = inputFilename.find_last_of('.');
         size_t lastSlash = inputFilename.find_last_of("/\\");
         
@@ -205,7 +205,7 @@ private:
     }
     
     /**
-     * 创建指定大小的分割文件
+     *translated comment
      */
     bool createSplitFile(double targetSizeMB) {
         size_t targetRows = calculateRowsForTargetSize(targetSizeMB);
@@ -232,10 +232,10 @@ private:
             return false;
         }
         
-        // 写入头部
+        //translated comment
         outputFile << headerLine << "\n";
         
-        // 跳过输入文件的头部
+        //translated comment
         std::string line;
         std::getline(inputFile, line);
         
@@ -244,16 +244,16 @@ private:
         
         std::cout << "正在创建 " << targetSizeMB << "MB 文件..." << std::endl;
         
-        // 读取并写入数据行，直到达到目标行数
+        //translated comment
         while (std::getline(inputFile, line) && linesWritten < targetRows) {
-            // 验证行中的有效数据点数
+            //translated comment
             size_t validPointsInLine = countValidDataPoints(line);
             
             outputFile << line << "\n";
             linesWritten++;
             validDataPoints += validPointsInLine;
             
-            // 每10000行显示一次进度
+            //translated comment
             if (linesWritten % 10000 == 0 || linesWritten == targetRows) {
                 double currentSizeMB = (double)(validDataPoints * sizeof(double)) / (1024.0 * 1024.0);
                 double progress = (double)linesWritten / targetRows * 100.0;
@@ -267,7 +267,7 @@ private:
         inputFile.close();
         outputFile.close();
         
-        // 计算实际大小
+        //translated comment
         double actualSizeMB = (double)(validDataPoints * sizeof(double)) / (1024.0 * 1024.0);
         double accuracy = (actualSizeMB / targetSizeMB) * 100.0;
         
@@ -283,7 +283,7 @@ private:
     }
     
     /**
-     * 计算一行中的有效数据点数量
+     *translated comment
      */
     size_t countValidDataPoints(const std::string& line) {
         std::stringstream ss(line);
@@ -295,7 +295,7 @@ private:
                 char* endptr = nullptr;
                 double val = std::strtod(cell.c_str(), &endptr);
                 
-                // 增强的数值校验（包括无穷大检查）
+                //translated comment
                 if (endptr != cell.c_str() && !std::isnan(val) && std::isfinite(val)) {
                     validCount++;
                 }
@@ -307,7 +307,7 @@ private:
     
 public:
     /**
-     * 分割CSV文件
+     *CSV
      */
     bool splitCSV() {
         if (!analyzeCSVStructure()) {
@@ -323,7 +323,7 @@ public:
         std::cout << "开始分割文件..." << std::endl;
         std::cout << "========================================" << std::endl;
         
-        // 为每个目标大小生成文件
+        //translated comment
         bool success = true;
         for (double targetSize : targetSizesInMB) {
             if (!createSplitFile(targetSize)) {
@@ -337,7 +337,7 @@ public:
     }
     
     /**
-     * 显示当前配置信息
+     *translated comment
      */
     void showConfiguration() {
         std::cout << "CSV分割器配置:" << std::endl;
@@ -352,7 +352,7 @@ public:
 };
 
 /**
- * 显示使用帮助
+ *translated comment
  */
 void showUsage(const char* programName) {
     std::cout << "增强版CSV分割器 - 基于数据大小精确分割" << std::endl;
@@ -381,7 +381,7 @@ int main(int argc, char* argv[]) {
     
     std::string inputFile = argv[1];
     
-    // 检查文件是否存在
+    //translated comment
     std::ifstream testFile(inputFile);
     if (!testFile.is_open()) {
         std::cerr << "错误: 无法打开文件 " << inputFile << std::endl;
@@ -392,10 +392,10 @@ int main(int argc, char* argv[]) {
     EnhancedCSVSplitter* splitter = nullptr;
     
     if (argc == 2) {
-        // 默认配置
+        //translated comment
         splitter = new EnhancedCSVSplitter(inputFile);
     } else if (argc >= 5) {
-        // 自定义范围
+        //translated comment
         double startSize = std::stod(argv[2]);
         double endSize = std::stod(argv[3]);
         double stepSize = std::stod(argv[4]);

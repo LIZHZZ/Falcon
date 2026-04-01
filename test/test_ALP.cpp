@@ -32,7 +32,7 @@
 // }
 // } // namespace test
 
-// // 文件压缩统计结构
+//translated comment
 // struct FileCompressionStats {
 //     std::string file_path;
 //     double total_original_size = 0;
@@ -122,7 +122,7 @@
 //         size_t positions_size = exceptions_count * sizeof(uint16_t);
 //         size_t metadata_size = sizeof(stt.right_for_base) + sizeof(stt.left_for_base) + 
 //                               sizeof(stt.right_bit_width) + sizeof(stt.left_bit_width) +
-//                               sizeof(uint16_t); // 异常计数
+//sizeof(uint16_t); //
         
 //         return right_compressed_size + left_compressed_size + exceptions_size + positions_size + metadata_size;
 //     }
@@ -135,7 +135,7 @@
 //         size_t positions_size = exceptions_count * sizeof(uint16_t);
 //         size_t metadata_size = sizeof(int64_t) + sizeof(bit_width) + 
 //                               sizeof(stt.fac) + sizeof(stt.exp) + 
-//                               sizeof(uint16_t); // 异常计数
+//sizeof(uint16_t); //
         
 //         // printf("bit_width = %d \n", bit_width);
         
@@ -161,7 +161,7 @@
 //         auto* base_arr = reinterpret_cast<ST*>(base_buf.get());
 //         auto* ffor_arr = reinterpret_cast<ST*>(ffor_buf.get());
 
-//         // 复制数据到输入缓冲区
+//translated comment
 //         for (size_t i = 0; i < batch_size; ++i) {
 //             input_arr[i] = static_cast<PT>(all_data[start_idx + i]);
 //             // printf("%f, ",all_data[start_idx + i]);
@@ -174,7 +174,7 @@
 //         alp::encoder<PT>::init(input_arr, rowgroup_offset, batch_size, sample_arr, stt);
 //         auto init_end = std::chrono::high_resolution_clock::now();
 
-//         // 统计方案使用情况
+//translated comment
 //         file_stats.scheme_usage[stt.scheme]++;
 
 //         switch (stt.scheme) {
@@ -196,13 +196,13 @@
 
 //             auto decode_end = std::chrono::high_resolution_clock::now();
 
-//             // 验证结果
+//translated comment
 //             for (size_t i = 0; i < batch_size; ++i) { 
 //                 test::ALP_ASSERT(input_arr[i], glue_arr[i]);
 //             }
 
-//             // 计算压缩大小
-//             uint16_t exceptions_count = exc_c_arr.get()[0]; // 假设异常计数存储在第一个位置
+//translated comment
+//uint16_t exceptions_count = exc_c_arr.get()[0]; //
 //             size_t compressed_size = calculate_compressed_size_alp_rd(stt, batch_size, exceptions_count);
 
 //             file_stats.total_encode_time += (encode_end - encode_start);
@@ -227,13 +227,13 @@
 
 //             auto decode_end = std::chrono::high_resolution_clock::now();
 
-//             // 验证结果
+//translated comment
 //             for (size_t i = 0; i < batch_size; ++i) {
 //                 test::ALP_ASSERT(input_arr[i], dec_dbl_arr[i]);
 //             }
 
-//             // 计算压缩大小
-//             uint16_t exceptions_count = exc_c_arr.get()[0]; // 假设异常计数存储在第一个位置
+//translated comment
+//uint16_t exceptions_count = exc_c_arr.get()[0]; //
 //             size_t compressed_size = calculate_compressed_size_alp(stt, batch_size, bit_width, exceptions_count);
 //             size_t osize = batch_size*64;
 //             file_stats.total_encode_time += (encode_end - encode_start);
@@ -250,7 +250,7 @@
 //             break;
 //         }
 //         default:
-//             std::cerr << "未知的压缩方案" << std::endl;
+//std::cerr << " " << std::endl;
 //             break;
 //         }
 
@@ -261,17 +261,17 @@
 
 //     template <typename PT>
 //     void test_file_data(const std::string& file_path, FileCompressionStats& file_stats) {
-//         // 一次性读取整个文件的所有数据
+//translated comment
 //         std::vector<double> all_data = read_data(file_path, false);
         
 //         if (all_data.empty()) {
-//             std::cerr << "警告: 文件 " << file_path << " 中没有有效数据" << std::endl;
+//std::cerr << " : " << file_path << " " << std::endl;
 //             return;
 //         }
 
-//         // std::cout << "文件总数据点: " << all_data.size() << std::endl;
+//// std::cout << " : " << all_data.size() << std::endl;
 
-//         // 按批次处理数据
+//translated comment
 //         size_t data_index = 0;
 //         size_t all_batch = 0;
 //         // for(int i=0;(i<10);i++)
@@ -287,7 +287,7 @@
 //                 compress_data_batch<PT>(all_data, data_index, batch_size, file_stats);
                 
 //             } catch (const std::exception& e) {
-//                 std::cerr << "压缩批次 " << data_index << " 失败: " << e.what() << std::endl;
+//std::cerr << " " << data_index << " : " << e.what() << std::endl;
 //                 throw;
 //             }
 
@@ -303,7 +303,7 @@
 // std::string dir_path = "../test/data/tsbs_csv";
 
 // TEST_F(alp_test, ratio) {
-//     // 获取目录中的所有CSV文件
+//// CSV
 //     std::vector<std::string> csv_files;
     
 //     try {
@@ -313,17 +313,17 @@
 //             }
 //         }
 //     } catch (const std::exception& e) {
-//         std::cerr << "读取目录失败: " << e.what() << std::endl;
-//         FAIL() << "无法读取数据目录: " << dir_path;
+//std::cerr << " : " << e.what() << std::endl;
+//FAIL() << " : " << dir_path;
 //     }
 
-//     // ASSERT_FALSE(csv_files.empty()) << "在目录 " << dir_path << " 中没有找到CSV文件!";
+//// ASSERT_FALSE(csv_files.empty()) << " " << dir_path << " CSV !";
     
-//     // std::cout << "找到 " << csv_files.size() << " 个CSV文件" << std::endl;
+//// std::cout << " " << csv_files.size() << " CSV " << std::endl;
     
 //     std::vector<FileCompressionStats> all_file_stats;
     
-//     // 按文件处理
+//translated comment
 //     for (const auto& file_path : csv_files) {
 //         std::cout << "\nProcessing file: " << file_path << std::endl;
 
@@ -332,7 +332,7 @@
 //         file_stats.file_path = file_path;
         
 //         try {
-//             // 进行3次测试取平均值
+//translated comment
 //             FileCompressionStats total_stats;
 //             total_stats.file_path = file_path;
             
@@ -341,12 +341,12 @@
 //                 run_stats.file_path = file_path;
 
                 
-//                 // std::cout << "第 " << (run + 1) << " 次运行..." << std::endl;
+//// std::cout << " " << (run + 1) << " ..." << std::endl;
 //                 test_file_data<double>(file_path, run_stats);
                 
 //                 size_t total_compressed_size = run_stats.total_compressed_size;
 //                 printf("file_stats : %d \n", total_compressed_size);
-//                 // 累加统计信息
+//translated comment
 //                 total_stats.total_original_size += run_stats.total_original_size;
 //                 total_stats.total_compressed_size += run_stats.total_compressed_size;
 //                 total_stats.total_encode_time += run_stats.total_encode_time;
@@ -354,13 +354,13 @@
 //                 total_stats.total_data_points += run_stats.total_data_points;
 //                 total_stats.batches_processed += run_stats.batches_processed;
                 
-//                 // 合并方案使用统计
+//translated comment
 //                 for (const auto& [scheme, count] : run_stats.scheme_usage) {
 //                     total_stats.scheme_usage[scheme] += count;
 //                 }
 //             }
             
-//             // 计算平均值
+//translated comment
 //             file_stats.total_original_size = total_stats.total_original_size / 3.0;
 //             file_stats.total_compressed_size = total_stats.total_compressed_size / 3.0;
 //             file_stats.total_encode_time = total_stats.total_encode_time / 3.0;
@@ -368,12 +368,12 @@
 //             file_stats.total_data_points = total_stats.total_data_points / 3;
 //             file_stats.batches_processed = total_stats.batches_processed / 3;
             
-//             // 方案使用统计取平均
+//translated comment
 //             for (const auto& [scheme, count] : total_stats.scheme_usage) {
 //                 file_stats.scheme_usage[scheme] = count / 3;
 //             }
             
-//             // 输出统计结果
+//translated comment
 //             CompressionInfo compression_info{
 //                 file_stats.total_original_size / (1024.0 * 1024.0),
 //                 file_stats.total_compressed_size / (1024.0 * 1024.0),
@@ -388,19 +388,19 @@
             
 //             compression_info.print();
             
-//             // 输出方案使用统计
-//             // std::cout << "压缩方案使用统计:" << std::endl;
+//translated comment
+//// std::cout << " :" << std::endl;
 //             // for (const auto& [scheme, count] : file_stats.scheme_usage) {
-//             //     std::cout << "  方案 " << static_cast<int>(scheme) << ": " << count << " 次" << std::endl;
+//// std::cout << " " << static_cast<int>(scheme) << ": " << count << " " << std::endl;
 //             // }
             
-//             // std::cout << "处理批次数: " << file_stats.batches_processed << std::endl;
+//// std::cout << " : " << file_stats.batches_processed << std::endl;
 //             // std::cout << "=============================================" << std::endl;
             
 //             all_file_stats.push_back(file_stats);
 //         std::cout << "========================================" << std::endl;
 //         } catch (const std::exception& e) {
-//             std::cerr << "处理文件 " << file_path << " 时出错: " << e.what() << std::endl;
+//std::cerr << " " << file_path << " : " << e.what() << std::endl;
 //         }
 //     }
     
@@ -449,7 +449,7 @@ void ALP_ASSERT(T original_val, T decoded_val) {
 }
 } // namespace test
 
-// 文件压缩统计结构
+//translated comment
 struct FileCompressionStats {
     std::string file_path;
     double total_original_size = 0;
@@ -486,7 +486,7 @@ struct FileCompressionStats {
 class alp_test : public ::testing::Test {
 public:
     void SetUp() override {
-        // 初始化代码，如果需要
+        //translated comment
     }
 
     template <typename PT>
@@ -520,13 +520,13 @@ public:
                               alp::state<PT>& stt, FileCompressionStats& file_stats) {
         using UT = typename alp::inner_t<PT>::ut;
         
-        // 对于不完整的vector，需要填充到VECTOR_SIZE避免越界
+        //vector， VECTOR_SIZE
         bool is_incomplete_vector = (vector_size < alp::config::VECTOR_SIZE);
         size_t padded_size = alp::config::VECTOR_SIZE;
         
         auto encode_start = std::chrono::high_resolution_clock::now();
         
-        // 分配固定大小的缓冲区
+        //translated comment
         auto padded_input = std::make_unique<PT[]>(padded_size);
         auto right_arr = std::make_unique<UT[]>(padded_size);
         auto left_arr = std::make_unique<uint16_t[]>(padded_size);
@@ -537,28 +537,28 @@ public:
         auto ffor_left_arr = std::make_unique<uint16_t[]>(padded_size);
         auto decoded_arr = std::make_unique<PT[]>(padded_size);
         
-        // 复制原始数据，对不完整vector进行填充
+        //， vector
         std::memcpy(padded_input.get(), vector_data, vector_size * sizeof(PT));
         if (is_incomplete_vector) {
-            // 用最后一个有效值填充剩余位置
+            //translated comment
             PT fill_value = (vector_size > 0) ? vector_data[vector_size - 1] : PT(0.0);
             for (size_t i = vector_size; i < padded_size; ++i) {
                 padded_input[i] = fill_value;
             }
-            // std::cout << "      填充不完整vector: " << vector_size << " -> " << padded_size << std::endl;
+            //std::cout << " vector: " << vector_size << " -> " << padded_size << std::endl;
         }
         
-        // ALP_RD编码 - 使用rowgroup级别确定的参数
+        //ALP_RD - rowgroup
         alp::rd_encoder<PT>::encode(padded_input.get(), rd_exc_arr.get(), pos_arr.get(), 
                                   exc_c_arr.get(), right_arr.get(), left_arr.get(), stt);
         
-        // FFOR压缩
+        //FFOR
         ffor::ffor(right_arr.get(), ffor_right_arr.get(), stt.right_bit_width, &stt.right_for_base);
         ffor::ffor(left_arr.get(), ffor_left_arr.get(), stt.left_bit_width, &stt.left_for_base);
         
         auto encode_end = std::chrono::high_resolution_clock::now();
 
-        // 解码验证
+        //translated comment
         auto decode_start = std::chrono::high_resolution_clock::now();
         auto unffor_right_arr = std::make_unique<UT[]>(padded_size);
         auto unffor_left_arr = std::make_unique<uint16_t[]>(padded_size);
@@ -569,17 +569,17 @@ public:
                                   rd_exc_arr.get(), pos_arr.get(), exc_c_arr.get(), stt);
         auto decode_end = std::chrono::high_resolution_clock::now();
 
-        // 只验证原始数据部分
+        //translated comment
         for (size_t i = 0; i < vector_size; ++i) {
             test::ALP_ASSERT(vector_data[i], decoded_arr[i]);
         }
 
-        // 统计信息只计算实际数据的压缩效果
+        //translated comment
         file_stats.total_encode_time += (encode_end - encode_start);
         file_stats.total_decode_time += (decode_end - decode_start);
         
         uint16_t exceptions_count = exc_c_arr.get()[0];
-        // 对于填充的vector，按原始大小计算压缩率更准确
+        //vector，
         size_t compressed_size = calculate_compressed_size_alp_rd(stt, vector_size, exceptions_count);
         file_stats.total_compressed_size += static_cast<double>(compressed_size);
     }
@@ -589,13 +589,13 @@ public:
                            alp::state<PT>& stt, FileCompressionStats& file_stats) {
         using ST = typename alp::inner_t<PT>::st;
         
-        // 对于不完整的vector，需要填充到VECTOR_SIZE避免越界
+        //vector， VECTOR_SIZE
         bool is_incomplete_vector = (vector_size < alp::config::VECTOR_SIZE);
         size_t padded_size = alp::config::VECTOR_SIZE;
         
         auto encode_start = std::chrono::high_resolution_clock::now();
 
-        // 分配固定大小的缓冲区
+        //translated comment
         auto padded_input = std::make_unique<PT[]>(padded_size);
         auto exc_arr = std::make_unique<PT[]>(padded_size);
         auto pos_arr = std::make_unique<uint16_t[]>(padded_size);
@@ -605,30 +605,30 @@ public:
         auto ffor_arr = std::make_unique<ST[]>(padded_size);
         auto decoded_arr = std::make_unique<PT[]>(padded_size);
         
-        // 复制原始数据，对不完整vector进行填充
+        //， vector
         std::memcpy(padded_input.get(), vector_data, vector_size * sizeof(PT));
         if (is_incomplete_vector) {
-            // 用最后一个有效值填充剩余位置，避免引入噪声
+            //translated comment
             PT fill_value = (vector_size > 0) ? vector_data[vector_size - 1] : PT(0.0);
             for (size_t i = vector_size; i < padded_size; ++i) {
                 padded_input[i] = fill_value;
             }
-            // std::cout << "      填充不完整vector: " << vector_size << " -> " << padded_size << std::endl;
+            //std::cout << " vector: " << vector_size << " -> " << padded_size << std::endl;
         }
         
-        // 设置向量大小并编码（使用填充后的大小）
+        //translated comment
         stt.vector_size = padded_size;
         alp::encoder<PT>::encode(padded_input.get(), exc_arr.get(), pos_arr.get(), 
                                exc_c_arr.get(), encoded_arr.get(), stt);
         
-        // FFOR压缩
+        //FFOR
         alp::bw_t bit_width;
         alp::encoder<PT>::analyze_ffor(encoded_arr.get(), bit_width, base_arr.get());
         ffor::ffor(encoded_arr.get(), ffor_arr.get(), bit_width, base_arr.get());
 
         auto encode_end = std::chrono::high_resolution_clock::now();
 
-        // 解码验证
+        //translated comment
         auto decode_start = std::chrono::high_resolution_clock::now();
         
         generated::falp::fallback::scalar::falp(ffor_arr.get(), decoded_arr.get(), 
@@ -636,17 +636,17 @@ public:
         alp::decoder<PT>::patch_exceptions(decoded_arr.get(), exc_arr.get(), pos_arr.get(), exc_c_arr.get());
         auto decode_end = std::chrono::high_resolution_clock::now();
 
-        // 只验证原始数据部分
+        //translated comment
         for (size_t i = 0; i < vector_size; ++i) {
             test::ALP_ASSERT(vector_data[i], decoded_arr[i]);
         }
 
-        // 统计信息只计算实际数据的压缩效果
+        //translated comment
         file_stats.total_encode_time += (encode_end - encode_start);
         file_stats.total_decode_time += (decode_end - decode_start);
         
         uint16_t exceptions_count = exc_c_arr.get()[0];
-        // 对于填充的vector，按原始大小计算压缩率更准确
+        //vector，
         size_t compressed_size = calculate_compressed_size_alp(stt, vector_size, bit_width, exceptions_count);
         file_stats.total_compressed_size += static_cast<double>(compressed_size);
     }
@@ -655,39 +655,39 @@ public:
     void compress_rowgroup(const std::vector<double>& all_data, size_t start_idx, 
                           size_t rowgroup_size, FileCompressionStats& file_stats) {
         
-        // std::cout << "处理Rowgroup: 起始索引=" << start_idx 
-        //           << ", 大小=" << rowgroup_size << " 个数据点" << std::endl;
+        //std::cout << " Rowgroup: =" << start_idx
+        //<< ", =" << rowgroup_size << " " << std::endl;
         
-        // 分配rowgroup级别的数据缓冲区
+        //rowgroup
         auto rowgroup_data = std::make_unique<PT[]>(rowgroup_size);
         for (size_t i = 0; i < rowgroup_size; ++i) {
             rowgroup_data[i] = static_cast<PT>(all_data[start_idx + i]);
         }
 
-        // 第一阶段：在整个rowgroup上进行采样和参数选择
+        //： rowgroup
         alp::state<PT> stt;
-        auto sample_buf = std::make_unique<PT[]>(rowgroup_size); // 用于采样的临时缓冲区
+        auto sample_buf = std::make_unique<PT[]>(rowgroup_size); //translated comment
         
         auto init_start = std::chrono::high_resolution_clock::now();
         
-        // 在整个rowgroup上进行初始化和采样
+        //rowgroup
         alp::encoder<PT>::init(rowgroup_data.get(), 0, rowgroup_size, sample_buf.get(), stt);
         
-        // 对于ALP_RD，需要在rowgroup级别构建字典
+        //ALP_RD， rowgroup
         if (stt.scheme == alp::Scheme::ALP_RD) {
             alp::rd_encoder<PT>::init(rowgroup_data.get(), 0, rowgroup_size, sample_buf.get(), stt);
         }
         
         auto init_end = std::chrono::high_resolution_clock::now();
         
-        // std::cout << "  选择压缩方案: " << 
+        //std::cout << " : " <<
         //     (stt.scheme == alp::Scheme::ALP ? "ALP" : "ALP_RD") << std::endl;
-        // std::cout << "  采样和初始化时间: " << 
+        //std::cout << " : " <<
         //     std::chrono::duration<double, std::milli>(init_end - init_start).count() << " ms" << std::endl;
 
         file_stats.scheme_usage[stt.scheme]++;
 
-        // 第二阶段：将rowgroup分解为多个vector进行编码
+        //： rowgroup vector
         size_t processed = 0;
         size_t vector_count = 0;
         
@@ -697,10 +697,10 @@ public:
             
             PT* current_vector = rowgroup_data.get() + processed;
             
-            // std::cout << "    处理Vector " << vector_count << ": " 
-            //           << current_vector_size << " 个数据点" << std::endl;
+            //std::cout << " Vector " << vector_count << ": "
+            //<< current_vector_size << " " << std::endl;
             
-            // 根据scheme处理当前vector
+            //scheme vector
             switch (stt.scheme) {
             case alp::Scheme::ALP_RD:
                 process_vector_alp_rd<PT>(current_vector, current_vector_size, stt, file_stats);
@@ -719,7 +719,7 @@ public:
             vector_count++;
         }
         
-        // std::cout << "  完成处理 " << vector_count << " 个vectors" << std::endl;
+        //std::cout << " " << vector_count << " vectors" << std::endl;
         file_stats.batches_processed++;
     }
 
@@ -737,7 +737,7 @@ public:
             (all_data.size() + alp::config::ROWGROUP_SIZE - 1) / alp::config::ROWGROUP_SIZE 
             << " 个rowgroups" << std::endl;
 
-        // 按完整的rowgroup进行处理
+        //rowgroup
         size_t data_index = 0;
         size_t rowgroup_count = 0;
         
@@ -745,7 +745,7 @@ public:
             size_t rowgroup_size = std::min(static_cast<size_t>(alp::config::ROWGROUP_SIZE),
                                           all_data.size() - data_index);
             
-            // std::cout << "\n=== 处理第 " << rowgroup_count + 1 << " 个Rowgroup ===" << std::endl;
+            //std::cout << "\n=== " << rowgroup_count + 1 << " Rowgroup ===" << std::endl;
             
             try {
                 compress_rowgroup<PT>(all_data, data_index, rowgroup_size, file_stats);
@@ -789,7 +789,7 @@ TEST_F(alp_test, ratio) {
         file_stats.file_path = file_path;
         
         try {
-            // 只运行一次，避免重复输出干扰分析
+            //translated comment
             test_file_data<double>(file_path, file_stats);
             
             CompressionInfo compression_info{
@@ -821,11 +821,11 @@ TEST_F(alp_test, ratio) {
             
         } catch (const std::exception& e) {
             std::cerr << "处理文件 " << file_path << " 时出错: " << e.what() << std::endl;
-            continue; // 继续处理下一个文件
+            continue; //translated comment
         }
     }
     
-    // 输出总体统计信息
+    //translated comment
     if (!all_file_stats.empty()) {
         std::cout << "\n" << std::string(60, '=') << std::endl;
         std::cout << "总体统计信息" << std::endl;

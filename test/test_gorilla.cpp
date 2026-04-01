@@ -12,12 +12,12 @@
 
 namespace fs = std::filesystem;
 
-// 每批最大数据量（避免单次分配过大内存）
+//translated comment
 static const size_t BATCH_SIZE = 1024*16;
 
-// Gorilla 压缩/解压包装（分批处理）
+//Gorilla / （ ）
 static CompressionInfo test_gorilla_compression(const std::vector<double>& data) {
-    // 过滤 NaN 值（Gorilla 也使用 NaN 作为终止符）
+    //NaN （Gorilla NaN ）
     std::vector<double> filtered_data;
     filtered_data.reserve(data.size());
     for (const auto& v : data) {
@@ -38,7 +38,7 @@ static CompressionInfo test_gorilla_compression(const std::vector<double>& data)
     std::vector<Array<uint8_t>> compressed_batches;
     compressed_batches.reserve(num_batches);
     
-    // ========== 压缩阶段 ==========
+    //translated comment
     auto comp_start = std::chrono::high_resolution_clock::now();
     
     for (size_t batch = 0; batch < num_batches; ++batch) {
@@ -58,7 +58,7 @@ static CompressionInfo test_gorilla_compression(const std::vector<double>& data)
     
     auto comp_end = std::chrono::high_resolution_clock::now();
     
-    // ========== 解压阶段 ==========
+    //translated comment
     auto decomp_start = std::chrono::high_resolution_clock::now();
     
     std::vector<double> all_decompressed;
@@ -72,7 +72,7 @@ static CompressionInfo test_gorilla_compression(const std::vector<double>& data)
     
     auto decomp_end = std::chrono::high_resolution_clock::now();
 
-    // 验证正确性
+    //translated comment
     if (all_decompressed.size() != filtered_data.size()) {
         std::cerr << "[Gorilla] 警告: 解压数据大小不匹配! 原始=" << filtered_data.size()
                   << ", 解压=" << all_decompressed.size() << std::endl;

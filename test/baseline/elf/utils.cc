@@ -238,7 +238,7 @@ static int *getSPAnd10iNFlag(double v) {
   return spAnd10iNFlag;
 }
 
-// 添加float版本的getSP函数
+//float getSP
 int getSP_32(float v) {
   if (v >= 1) {
     int i = 0;
@@ -257,10 +257,10 @@ int getSP_32(float v) {
       i++;
     }
   }
-  return (int) floor(log10f(v));  // 使用log10f而不是log10
+  return (int) floor(log10f(v));  //log10f log10
 }
 
-// 添加float版本的getSPAnd10iNFlag函数
+//float getSPAnd10iNFlag
 static int *getSPAnd10iNFlag_32(float v) {
   int *spAnd10iNFlag = new int[2];
   if (v >= 1) {

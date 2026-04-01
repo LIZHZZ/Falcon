@@ -53,7 +53,7 @@ struct CompressionMetrics {
         std::cout << "解压吞吐量:" << decompression_total_throughput_gbps << " GB/s" << std::endl;
         std::cout << "Data integrity:                " << (data_integrity_ok ? "✓ PASS" : "✗ FAIL") << std::endl;
     }
-        // 加法运算符重载
+        //translated comment
     CompressionMetrics operator+(const CompressionMetrics& other) const {
         return {
             input_size + other.input_size,
@@ -66,11 +66,11 @@ struct CompressionMetrics {
             decompression_total_time_ms + other.decompression_total_time_ms,
             compression_total_throughput_gbps + other.compression_total_throughput_gbps,
             decompression_total_throughput_gbps + other.decompression_total_throughput_gbps,
-            data_integrity_ok && other.data_integrity_ok // 只有当两者都有效时结果才有效
+            data_integrity_ok && other.data_integrity_ok //translated comment
         };
     }
     
-    // 加法赋值运算符重载
+    //translated comment
     CompressionMetrics& operator+=(const CompressionMetrics& other) {
         input_size += other.input_size;
         compressed_size += other.compressed_size;
@@ -86,7 +86,7 @@ struct CompressionMetrics {
         return *this;
     }
     
-    // 除法运算符重载 (除以整数)
+    //translated comment
     CompressionMetrics operator/(int divisor) const {
         if (divisor == 0) {
             throw std::invalid_argument("Division by zero is not allowed");
@@ -102,11 +102,11 @@ struct CompressionMetrics {
             decompression_total_time_ms / divisor,
             compression_total_throughput_gbps / divisor,
             decompression_total_throughput_gbps / divisor,
-            data_integrity_ok // 布尔值保持不变
+            data_integrity_ok //translated comment
         };
     }
     
-    // 除法运算符重载 (除以浮点数)
+    //translated comment
     CompressionMetrics operator/(double divisor) const {
         if (divisor == 0.0) {
             throw std::invalid_argument("Division by zero is not allowed");
@@ -122,7 +122,7 @@ struct CompressionMetrics {
             decompression_total_time_ms / divisor,
             compression_total_throughput_gbps / divisor,
             decompression_total_throughput_gbps / divisor,
-            data_integrity_ok // 布尔值保持不变
+            data_integrity_ok //translated comment
         };
     }
     
@@ -145,11 +145,11 @@ CompressionMetrics test_snappy_compression_core(const void* input_data, size_t i
     CompressionMetrics metrics = {};
     metrics.input_size = input_size;
     
-    // 创建CUDA流用于异步操作
+    //CUDA
     cudaStream_t stream;
     CHECK_CUDA(cudaStreamCreate(&stream));
     
-    // 创建CUDA事件
+    //CUDA
     cudaEvent_t comp_start, comp_kernel_start, comp_kernel_stop, comp_stop;
     cudaEvent_t decomp_start, decomp_kernel_start, decomp_kernel_stop, decomp_stop;
     CHECK_CUDA(cudaEventCreate(&comp_start));
@@ -180,7 +180,7 @@ CompressionMetrics test_snappy_compression_core(const void* input_data, size_t i
     nvcompStatus_t* d_decomp_statuses = nullptr;
     
     try {
-        // 定义最大chunk大小 (例如 64MB)
+        //chunk ( 64MB)
         const size_t max_chunk_size = 16 * 1024 * 1024; // 16MB
         const size_t num_chunks = (input_size + max_chunk_size - 1) / max_chunk_size;
         
@@ -189,21 +189,21 @@ CompressionMetrics test_snappy_compression_core(const void* input_data, size_t i
         // std::cout << "Max chunk size: " << max_chunk_size << " bytes" << std::endl;
         
         // ============ COMPRESSION PIPELINE ============
-        // 记录压缩总时间开始
+        //translated comment
         CHECK_CUDA(cudaEventRecord(comp_start, stream));
         
         // === H2D for Compression ===
         CHECK_CUDA(cudaMalloc(&d_input, input_size));
         CHECK_CUDA(cudaMemcpyAsync(d_input, input_data, input_size, cudaMemcpyHostToDevice, stream));
         
-        // 批量分配压缩所需的设备内存
+        //translated comment
         CHECK_CUDA(cudaMalloc(&d_input_ptrs, sizeof(void*) * num_chunks));
         CHECK_CUDA(cudaMalloc(&d_output_ptrs, sizeof(void*) * num_chunks));
         CHECK_CUDA(cudaMalloc(&d_input_sizes, sizeof(size_t) * num_chunks));
         CHECK_CUDA(cudaMalloc(&d_output_sizes, sizeof(size_t) * num_chunks));
         CHECK_CUDA(cudaMalloc(&d_actual_output_sizes, sizeof(size_t) * num_chunks));
         
-        // 准备输入参数 - 分块处理
+        //translated comment
         std::vector<void*> h_input_ptrs(num_chunks);
         std::vector<size_t> h_input_sizes(num_chunks);
         
@@ -217,13 +217,13 @@ CompressionMetrics test_snappy_compression_core(const void* input_data, size_t i
         CHECK_CUDA(cudaMemcpyAsync(d_input_ptrs, h_input_ptrs.data(), sizeof(void*) * num_chunks, cudaMemcpyHostToDevice, stream));
         CHECK_CUDA(cudaMemcpyAsync(d_input_sizes, h_input_sizes.data(), sizeof(size_t) * num_chunks, cudaMemcpyHostToDevice, stream));
 
-        // === 压缩设置 ===
+        //translated comment
         nvcompBatchedSnappyOpts_t opts{};
         
         size_t temp_bytes = 0;
         size_t max_output_size = 0;
         
-        // 获取压缩所需的临时空间和最大输出大小 - 使用最大chunk大小
+        //- chunk
         nvcompStatus_t status = nvcompBatchedSnappyCompressGetTempSize(num_chunks, max_chunk_size, opts, &temp_bytes);
         if (status != nvcompSuccess) {
             throw std::runtime_error("Failed to get compression temp size: " + std::to_string(status));
@@ -237,14 +237,14 @@ CompressionMetrics test_snappy_compression_core(const void* input_data, size_t i
         // std::cout << "Max output size per chunk: " << max_output_size << " bytes" << std::endl;
         // std::cout << "Temp bytes needed: " << temp_bytes << " bytes" << std::endl;
         
-        // 分配压缩缓冲区 - 为所有chunks分配空间
+        //- chunks
         size_t total_compressed_buffer_size = max_output_size * num_chunks;
         CHECK_CUDA(cudaMalloc(&d_compressed, total_compressed_buffer_size));
         if (temp_bytes > 0) {
             CHECK_CUDA(cudaMalloc(&d_temp_compress, temp_bytes));
         }
         
-        // 设置输出参数 - 为每个chunk分配输出空间
+        //- chunk
         std::vector<void*> h_output_ptrs(num_chunks);
         std::vector<size_t> h_output_sizes(num_chunks);
         
@@ -256,7 +256,7 @@ CompressionMetrics test_snappy_compression_core(const void* input_data, size_t i
         CHECK_CUDA(cudaMemcpyAsync(d_output_ptrs, h_output_ptrs.data(), sizeof(void*) * num_chunks, cudaMemcpyHostToDevice, stream));
         CHECK_CUDA(cudaMemcpyAsync(d_output_sizes, h_output_sizes.data(), sizeof(size_t) * num_chunks, cudaMemcpyHostToDevice, stream));
         
-        // 确保所有内存拷贝完成
+        //translated comment
         // CHECK_CUDA(cudaStreamSynchronize(stream));
         
         // === COMPRESSION KERNEL ===
@@ -277,19 +277,19 @@ CompressionMetrics test_snappy_compression_core(const void* input_data, size_t i
         }
         
         // === D2H for Compression ===
-        // 获取实际压缩大小
+        //translated comment
         std::vector<size_t> h_actual_output_sizes(num_chunks);
         CHECK_CUDA(cudaMemcpyAsync(h_actual_output_sizes.data(), d_actual_output_sizes, sizeof(size_t) * num_chunks, cudaMemcpyDeviceToHost, stream));
         CHECK_CUDA(cudaStreamSynchronize(stream));
         
-        // 计算总压缩大小
+        //translated comment
         metrics.compressed_size = 0;
         for (size_t i = 0; i < num_chunks; ++i) {
             metrics.compressed_size += h_actual_output_sizes[i];
             // std::cout << "Chunk " << i << " compressed size: " << h_actual_output_sizes[i] << " bytes" << std::endl;
         }
         
-        // 将压缩数据拷贝到主机（完整的D2H）
+        //translated comment
         std::vector<uint8_t> compressed_host_data(metrics.compressed_size);
         size_t compressed_offset = 0;
         for (size_t i = 0; i < num_chunks; ++i) {
@@ -303,27 +303,27 @@ CompressionMetrics test_snappy_compression_core(const void* input_data, size_t i
         }
         CHECK_CUDA(cudaStreamSynchronize(stream));
         
-        // 记录压缩总时间结束
+        //translated comment
         CHECK_CUDA(cudaEventRecord(comp_stop, stream));
         CHECK_CUDA(cudaStreamSynchronize(stream));
         
         // ============ DECOMPRESSION PIPELINE ============
-        // 记录解压缩总时间开始
+        //translated comment
         CHECK_CUDA(cudaEventRecord(decomp_start, stream));
         
         // === H2D for Decompression ===
-        // 为解压缩分配新的设备内存并拷贝压缩数据
+        //translated comment
         void* d_compressed_for_decomp = nullptr;
         CHECK_CUDA(cudaMalloc(&d_compressed_for_decomp, metrics.compressed_size));
         CHECK_CUDA(cudaMemcpyAsync(d_compressed_for_decomp, compressed_host_data.data(), metrics.compressed_size, cudaMemcpyHostToDevice, stream));
         
-        // 分配解压缩相关的设备内存
+        //translated comment
         CHECK_CUDA(cudaMalloc(&d_decomp_output_ptrs, sizeof(void*) * num_chunks));
         CHECK_CUDA(cudaMalloc(&d_decomp_output_sizes, sizeof(size_t) * num_chunks));
         CHECK_CUDA(cudaMalloc(&d_actual_decomp_sizes, sizeof(size_t) * num_chunks));
         CHECK_CUDA(cudaMalloc(&d_decomp_statuses, sizeof(nvcompStatus_t) * num_chunks));
         
-        // 重新设置压缩数据指针 - 分块指向
+        //translated comment
         std::vector<void*> h_compressed_ptrs(num_chunks);
         compressed_offset = 0;
         for (size_t i = 0; i < num_chunks; ++i) {
@@ -334,14 +334,14 @@ CompressionMetrics test_snappy_compression_core(const void* input_data, size_t i
         CHECK_CUDA(cudaMemcpyAsync(d_output_ptrs, h_compressed_ptrs.data(), sizeof(void*) * num_chunks, cudaMemcpyHostToDevice, stream));
         CHECK_CUDA(cudaMemcpyAsync(d_actual_output_sizes, h_actual_output_sizes.data(), sizeof(size_t) * num_chunks, cudaMemcpyHostToDevice, stream));
         
-        // === 解压缩设置 ===
+        //translated comment
         size_t decomp_temp_bytes = 0;
         status = nvcompBatchedSnappyDecompressGetTempSize(num_chunks, max_chunk_size, &decomp_temp_bytes);
         if (status != nvcompSuccess) {
             throw std::runtime_error("Failed to get decompression temp size: " + std::to_string(status));
         }
         
-        // 获取解压缩大小
+        //translated comment
         status = nvcompBatchedSnappyGetDecompressSizeAsync(d_output_ptrs, d_actual_output_sizes, d_decomp_output_sizes, num_chunks, stream);
         CHECK_CUDA(cudaStreamSynchronize(stream));
         if (status != nvcompSuccess) {
@@ -352,7 +352,7 @@ CompressionMetrics test_snappy_compression_core(const void* input_data, size_t i
         CHECK_CUDA(cudaMemcpyAsync(h_decomp_output_sizes.data(), d_decomp_output_sizes, sizeof(size_t) * num_chunks, cudaMemcpyDeviceToHost, stream));
         CHECK_CUDA(cudaStreamSynchronize(stream));
         
-        // 分配解压缩缓冲区
+        //translated comment
         size_t total_decomp_size = 0;
         for (size_t i = 0; i < num_chunks; ++i) {
             total_decomp_size += h_decomp_output_sizes[i];
@@ -363,7 +363,7 @@ CompressionMetrics test_snappy_compression_core(const void* input_data, size_t i
             CHECK_CUDA(cudaMalloc(&d_temp_decompress, decomp_temp_bytes));
         }
         
-        // 设置解压缩输出指针
+        //translated comment
         std::vector<void*> h_decomp_output_ptrs(num_chunks);
         size_t decomp_offset = 0;
         for (size_t i = 0; i < num_chunks; ++i) {
@@ -393,7 +393,7 @@ CompressionMetrics test_snappy_compression_core(const void* input_data, size_t i
             throw std::runtime_error("Decompression failed with status: " + std::to_string(status));
         }
         
-        // 检查解压缩状态
+        //translated comment
         std::vector<nvcompStatus_t> h_decomp_statuses(num_chunks);
         CHECK_CUDA(cudaMemcpyAsync(h_decomp_statuses.data(), d_decomp_statuses, sizeof(nvcompStatus_t) * num_chunks, cudaMemcpyDeviceToHost, stream));
         CHECK_CUDA(cudaStreamSynchronize(stream));
@@ -414,7 +414,7 @@ CompressionMetrics test_snappy_compression_core(const void* input_data, size_t i
         }
         
         // === D2H for Decompression ===
-        // 将解压缩数据拷贝到主机（完整的D2H）
+        //translated comment
         std::vector<uint8_t> decompressed_host_data(metrics.decompressed_size);
         size_t host_offset = 0;
         for (size_t i = 0; i < num_chunks; ++i) {
@@ -428,46 +428,46 @@ CompressionMetrics test_snappy_compression_core(const void* input_data, size_t i
         }
         CHECK_CUDA(cudaStreamSynchronize(stream));
         
-        // 记录解压缩总时间结束
+        //translated comment
         CHECK_CUDA(cudaEventRecord(decomp_stop, stream));
         CHECK_CUDA(cudaStreamSynchronize(stream));
         
-        // ============ 计算性能指标 ============
-        // 压缩核函数时间
+        //translated comment
+        //translated comment
         float compression_kernel_time;
         CHECK_CUDA(cudaEventElapsedTime(&compression_kernel_time, comp_kernel_start, comp_kernel_stop));
         metrics.compression_kernel_time_ms = compression_kernel_time;
         
-        // 解压缩核函数时间
+        //translated comment
         float decompression_kernel_time;
         CHECK_CUDA(cudaEventElapsedTime(&decompression_kernel_time, decomp_kernel_start, decomp_kernel_stop));
         metrics.decompression_kernel_time_ms = decompression_kernel_time;
         
-        // 压缩总时间（H2D + KERNEL + D2H）
+        //（H2D + KERNEL + D2H）
         float compression_total_time;
         CHECK_CUDA(cudaEventElapsedTime(&compression_total_time, comp_start, comp_stop));
         metrics.compression_total_time_ms = compression_total_time;
         
-        // 解压缩总时间（H2D + KERNEL + D2H）
+        //（H2D + KERNEL + D2H）
         float decompression_total_time;
         CHECK_CUDA(cudaEventElapsedTime(&decompression_total_time, decomp_start, decomp_stop));
         metrics.decompression_total_time_ms = decompression_total_time;
         
-        // 压缩率（小于1表示压缩效果）
+        //translated comment
         metrics.compression_ratio = (double)metrics.compressed_size / input_size;
         
-        // 吞吐量计算（GB/s）
+        //（GB/s）
         metrics.compression_total_throughput_gbps = (input_size / 1024.0 / 1024.0 / 1024.0) / (compression_total_time / 1000.0);
         metrics.decompression_total_throughput_gbps = (metrics.decompressed_size / 1024.0 / 1024.0 / 1024.0) / (decompression_total_time / 1000.0);
         
-        // === 数据完整性检查 ===
+        //translated comment
         if (metrics.decompressed_size == input_size) {
             metrics.data_integrity_ok = (std::memcmp(input_data, decompressed_host_data.data(), input_size) == 0);
         } else {
             metrics.data_integrity_ok = false;
         }
         
-        // 清理解压缩专用内存
+        //translated comment
         if (d_compressed_for_decomp) cudaFree(d_compressed_for_decomp);
         
     } catch (const std::exception& e) {
@@ -475,7 +475,7 @@ CompressionMetrics test_snappy_compression_core(const void* input_data, size_t i
         metrics.data_integrity_ok = false;
     }
     
-    // 清理设备内存
+    //translated comment
     if (d_input) cudaFree(d_input);
     if (d_compressed) cudaFree(d_compressed);
     if (d_decompressed) cudaFree(d_decompressed);
@@ -491,7 +491,7 @@ CompressionMetrics test_snappy_compression_core(const void* input_data, size_t i
     if (d_actual_decomp_sizes) cudaFree(d_actual_decomp_sizes);
     if (d_decomp_statuses) cudaFree(d_decomp_statuses);
     
-    // 清理CUDA对象
+    //CUDA
     CHECK_CUDA(cudaEventDestroy(comp_start));
     CHECK_CUDA(cudaEventDestroy(comp_kernel_start));
     CHECK_CUDA(cudaEventDestroy(comp_kernel_stop));
@@ -572,7 +572,7 @@ std::vector<uint8_t> convert(const std::vector<float>& oriData) {
 }
 
 void test_compression(const std::string& file_path,bool show=1) {
-    // 读取数据
+    //translated comment
     std::vector<float> oriData = read_data_float(file_path);
     auto patterned_data = convert(oriData);
     cudaDeviceReset();
@@ -630,9 +630,9 @@ void run_float_compression_tests() {
     std::cout << std::setw(15) << "Scientific" << std::setw(12) << metrics3.compression_ratio << std::setw(15) << metrics3.compression_total_throughput_gbps << std::setw(15) << metrics3.decompression_total_throughput_gbps << std::setw(15) << metrics3.compression_kernel_time_ms << std::setw(15) << metrics3.decompression_kernel_time_ms << std::endl;
 }
 
-// Google Test 测试用例
+//Google Test
 TEST(SnappyCompressorTest, CompressionDecompression) {
-    // 初始化CUDA设备
+    //CUDA
     int device_count;
     CHECK_CUDA(cudaGetDeviceCount(&device_count));
     
@@ -641,7 +641,7 @@ TEST(SnappyCompressorTest, CompressionDecompression) {
         return;
     }
     
-    // 显示GPU信息
+    //GPU
     cudaDeviceProp prop;
     CHECK_CUDA(cudaGetDeviceProperties(&prop, 0));
     std::cout << "GPU: " << prop.name << std::endl;
@@ -649,7 +649,7 @@ TEST(SnappyCompressorTest, CompressionDecompression) {
     std::cout << "Global Memory: " << prop.totalGlobalMem / (1024 * 1024) << " MB" << std::endl;
     
     bool warmup = false;
-    // 读取数据并测试压缩和解压
+    //translated comment
     std::string dir_path = "../test/data/tsbs_csv"; 
     for (const auto& entry : fs::directory_iterator(dir_path)) {
         if (entry.is_regular_file()) {
@@ -676,7 +676,7 @@ int main(int argc, char *argv[]) {
 
         std::string dir_path = argv[2];
 
-        // 检查目录是否存在
+        //translated comment
         if (!fs::exists(dir_path)) {
             std::cerr << "指定的数据目录不存在: " << dir_path << std::endl;
             return 1;

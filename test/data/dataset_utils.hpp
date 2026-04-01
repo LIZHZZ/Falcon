@@ -27,7 +27,7 @@ struct Column {
 
 std::vector<Column> get_dynamic_dataset(const std::string& directory_path, bool show_progress = false, char delimiter = ',');
 
-// 读取浮点数数据文件
+//translated comment
 std::vector<double> read_data(const std::string& file_path, bool a=0, char delimiter = ','); 
 std::vector<double> read_data(const std::string& file_path, int dsignificant_figures , bool show_progress = 0, char delimiter = ',');
 
@@ -35,21 +35,21 @@ std::vector<double> read_data(const std::string& file_path, int dsignificant_fig
 std::vector<float> read_data_float(const std::string& file_path, bool a=0, char delimiter = ','); 
 
 struct CompressionInfo {
-    // 数据大小信息 (MB)
-    double original_size_mb = 0.0;        // 原始数据大小 (MB)
-    double compressed_size_mb = 0.0;      // 压缩后数据大小 (MB)
+    //translated comment
+    double original_size_mb = 0.0;        //translated comment
+    double compressed_size_mb = 0.0;      //translated comment
     
-    // 压缩相关信息
-    double compression_ratio = 0.0;       // 压缩率
-    double comp_kernel_time = 0.0;       // 压缩核函数时间 (ms)
-    double comp_time = 0.0;               // 压缩总时间 (ms)
-    double comp_throughput = 0.0;        // 压缩吞吐量 (GB/s)
+    //translated comment
+    double compression_ratio = 0.0;       //translated comment
+    double comp_kernel_time = 0.0;       //translated comment
+    double comp_time = 0.0;               //translated comment
+    double comp_throughput = 0.0;        //(GB/s)
     
-    double decomp_kernel_time = 0.0;      // 解压核函数时间 (ms)
-    double decomp_time = 0.0;             // 解压总时间 (ms)
-    double decomp_throughput = 0.0;       // 解压吞吐量 (GB/s)
+    double decomp_kernel_time = 0.0;      //translated comment
+    double decomp_time = 0.0;             //translated comment
+    double decomp_throughput = 0.0;       //(GB/s)
     
-    // 加法运算符重载
+    //translated comment
     CompressionInfo operator+(const CompressionInfo& other) const {
         return {
             original_size_mb + other.original_size_mb,
@@ -64,7 +64,7 @@ struct CompressionInfo {
         };
     }
     
-    // 除法运算符重载 (除以整数)
+    //translated comment
     CompressionInfo operator/(int divisor) const {
         if (divisor == 0) {
             throw std::invalid_argument("Division by zero is not allowed");
@@ -82,7 +82,7 @@ struct CompressionInfo {
         };
     }
     
-    // 除法运算符重载 (除以浮点数)
+    //translated comment
     CompressionInfo operator/(double divisor) const {
         if (divisor == 0.0) {
             throw std::invalid_argument("Division by zero is not allowed");
@@ -100,7 +100,7 @@ struct CompressionInfo {
         };
     }
     
-    // 加法赋值运算符重载
+    //translated comment
     CompressionInfo& operator+=(const CompressionInfo& other) {
         original_size_mb += other.original_size_mb;
         compressed_size_mb += other.compressed_size_mb;
@@ -114,7 +114,7 @@ struct CompressionInfo {
         return *this;
     }
     
-    // 打印函数（可选，用于调试）
+    //translated comment
     void print() const {
         std::cout << std::fixed << std::setprecision(6);
         std::cout << "压缩信息:\n";

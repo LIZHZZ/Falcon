@@ -308,7 +308,7 @@ class ElfStarCompressor {
       // we write one more bit here, for marking an end of the stream.
       // size += writeInt(2, 2);
       xorCompressor.close();
-      // 这一步的size已在初始化时预留32bit
+      //size 32bit
       *getBytes() = numberOfValues;
       delete[] betaStarList;
       delete[] vPrimeList;
@@ -331,7 +331,7 @@ ssize_t elf_star_encode(double *in, ssize_t len, uint8_t **out) {
     if (i == 4219) {
       asm("nop");
     }
-    compressor.addValue(in[i]);//够了blocksize close()
+    compressor.addValue(in[i]);//blocksize close()
   }
   compressor.close();
   *out = (uint8_t *) compressor.getBytes();

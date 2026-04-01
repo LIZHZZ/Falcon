@@ -182,10 +182,10 @@ public:
             int setup_size = initLeadingRoundAndRepresentation() + 
                             initTrailingRoundAndRepresentation();
             if (setup_size == 0) {
-                // 设置失败，使用最小设置
-                leading_bits_per_value = 4;  // 默认值
+                //translated comment
+                leading_bits_per_value = 4;  //translated comment
                 trailing_bits_per_value = 4;
-                setup_size = 8;  // 估算值
+                setup_size = 8;  //translated comment
             }
             return setup_size + writeFirst(value);
         } else {
@@ -209,7 +209,7 @@ public:
 
 class ElfStarCompressor_EdgeSafe_32 {
 private:
-    size_t size = 32;  // 🔥 关键修复: 32位版本也是32 bits初始值
+    size_t size = 32;  //🔥 : 32 32 bits
     int lastBetaStar = INT_MAX;
     int numberOfValues = 0;
     ElfStarXORCompressor_EdgeSafe_32 xorCompressor;
@@ -231,9 +231,9 @@ public:
     __device__ __forceinline__ void addValue(float v, int *betaStarList, uint32_t *vPrimeList) {
         FLOAT data = {.f = v};
         
-        // 🔥 添加调试输出
+        //translated comment
         // if (numberOfValues == 0 && blockIdx.x == 0 && threadIdx.x == 0) {
-        //     printf("[压缩-addValue] 第0个值: v=%.6f, raw=0x%08X\n", v, data.i);
+        //printf("[ -addValue] 0 : v=%.6f, raw=0x%08X\n", v, data.i);
         // }
         
         if (v == 0.0f || isinf(v)) {
@@ -241,13 +241,13 @@ public:
             betaStarList[numberOfValues] = INT_MAX;
             
             // if (numberOfValues == 0 && blockIdx.x == 0 && threadIdx.x == 0) {
-            //     printf("[压缩-addValue] 分支: zero/inf, vPrime=0x%08X\n", data.i);
+            //printf("[ -addValue] : zero/inf, vPrime=0x%08X\n", data.i);
             // }
         } else if (isnan(v)) {
             vPrimeList[numberOfValues] = 0x7fc00000U & data.i;
             betaStarList[numberOfValues] = INT_MAX;
         } else {
-            // 正常值
+            //translated comment
             int alphaAndBetaStar[2];
             getAlphaAndBetaStar_32(v, lastBetaStar, alphaAndBetaStar);
             
@@ -270,7 +270,7 @@ public:
                 vPrimeList[numberOfValues] = mask & data.i;
                 
                 // if (numberOfValues == 0 && blockIdx.x == 0 && threadIdx.x == 0) {
-                //     printf("[压缩-addValue] 分支: 截断, betaStar=%d, vPrime=0x%08X, eraseBits=%d\n",
+                //printf("[ -addValue] : , betaStar=%d, vPrime=0x%08X, eraseBits=%d\n",
                 //         lastBetaStar, vPrimeList[numberOfValues], eraseBits);
                 // }
             } else {
@@ -278,7 +278,7 @@ public:
                 vPrimeList[numberOfValues] = data.i;
                 
                 // if (numberOfValues == 0 && blockIdx.x == 0 && threadIdx.x == 0) {
-                //     printf("[压缩-addValue] 分支: 保留原值, vPrime=0x%08X\n", data.i);
+                //printf("[ -addValue] : , vPrime=0x%08X\n", data.i);
                 // }
             }
         }
@@ -329,10 +329,10 @@ public:
         int compressionLastBetaStar = INT_MAX;
         
         // if (blockIdx.x == 0 && threadIdx.x == 0) {
-        //     printf("\n[压缩-compress] 开始压缩%d个值\n", len);
-        //     printf("[压缩-compress] 前3个vPrime: 0x%08X, 0x%08X, 0x%08X\n",
+        //printf("\n[ -compress] %d \n", len);
+        //printf("[ -compress] 3 vPrime: 0x%08X, 0x%08X, 0x%08X\n",
         //         vPrimeList[0], len > 1 ? vPrimeList[1] : 0, len > 2 ? vPrimeList[2] : 0);
-        //     printf("[压缩-compress] 前3个betaStar: %d, %d, %d\n",
+        //printf("[ -compress] 3 betaStar: %d, %d, %d\n",
         //         betaStarList[0], len > 1 ? betaStarList[1] : 0, len > 2 ? betaStarList[2] : 0);
         // }
         
@@ -347,7 +347,7 @@ public:
             }
             
             // if (i == 0 && blockIdx.x == 0 && threadIdx.x == 0) {
-            //     printf("[压缩-compress] 即将addValue第0个: vPrime=0x%08X\n", vPrimeList[i]);
+            //printf("[ -compress] addValue 0 : vPrime=0x%08X\n", vPrimeList[i]);
             // }
             
             size += xorCompressor.addValue(vPrimeList[i]);
@@ -402,7 +402,7 @@ __global__ void compress_kernel_32(const float* d_in_data,
                                 int num_chunks) {
     int chunk_idx = blockIdx.x * blockDim.x + threadIdx.x;
     
-    // 🔥 添加总块数输出
+    //translated comment
     if (chunk_idx == 0) {
         printf("[压缩Kernel] 总块数=%d, max_chunk_len=%llu\n", 
                num_chunks, (unsigned long long)max_chunk_len_elems);
@@ -417,9 +417,9 @@ __global__ void compress_kernel_32(const float* d_in_data,
     const float* p_in_chunk = d_in_data + in_offset_start;
     const ssize_t in_chunk_len_elems = in_offset_end - in_offset_start;
     
-    // 🔥 添加每个块的处理信息
+    //translated comment
     // if (chunk_idx < 3 || chunk_idx == num_chunks - 1) {
-    //     printf("[压缩Kernel] 块%d: offset=%llu-%llu, 元素数=%lld\n",
+    //printf("[ Kernel] %d: offset=%llu-%llu, =%lld\n",
     //            chunk_idx, (unsigned long long)in_offset_start, 
     //            (unsigned long long)in_offset_end, (long long)in_chunk_len_elems);
     // }
@@ -449,9 +449,9 @@ __global__ void compress_kernel_32(const float* d_in_data,
         d_compressed_sizes_bytes[chunk_idx] = actual_compressed_size;
     }
     
-    // 🔥 输出压缩结果
+    //translated comment
     // if (chunk_idx < 3 || chunk_idx == num_chunks - 1) {
-    //     printf("[压缩Kernel] 块%d压缩完成: %llu字节\n",
+    //printf("[ Kernel] %d : %llu \n",
     //            chunk_idx, (unsigned long long)actual_compressed_size);
     // }
 }

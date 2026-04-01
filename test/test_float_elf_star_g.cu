@@ -8,18 +8,18 @@
 #include <cuda_runtime.h>
 
 #include "Elf_Star_g_Kernel_32.cuh"
-#include "data/dataset_utils.hpp"  // 用于读取文件数据
+#include "data/dataset_utils.hpp"  //translated comment
 #include <filesystem>
 namespace fs = std::filesystem;
 
-// 测试数据生成函数
+//translated comment
 std::vector<float> generate_test_data(size_t size, int pattern = 0) {
     std::vector<float> data(size);
     std::random_device rd;
     std::mt19937 gen(rd());
     
     switch (pattern) {
-        case 0: // 随机数据
+        case 0: //translated comment
         {
             std::normal_distribution<float> dis(0.0, 1.0);
             for (size_t i = 0; i < size; ++i) {
@@ -27,26 +27,26 @@ std::vector<float> generate_test_data(size_t size, int pattern = 0) {
             }
             break;
         }
-        case 1: // 递增序列
+        case 1: //translated comment
         {
             for (size_t i = 0; i < size; ++i) {
                 data[i] = static_cast<float>(i) + 0.1;
             }
             break;
         }
-        case 2: // 周期性数据
+        case 2: //translated comment
         {
             for (size_t i = 0; i < size; ++i) {
                 data[i] = sin(2.0 * M_PI * i / 100.0) * 1000.0;
             }
             break;
         }
-        case 3: // 稀疏数据 (很多零)
+        case 3: //translated comment
         {
             std::uniform_real_distribution<float> dis(0.0, 1.0);
             std::uniform_real_distribution<float> val_dis(-1000.0, 1000.0);
             for (size_t i = 0; i < size; ++i) {
-                data[i] = (dis(gen) < 0.1) ? val_dis(gen) : 0.0;  // 10%概率非零
+                data[i] = (dis(gen) < 0.1) ? val_dis(gen) : 0.0;  //translated comment
             }
             break;
         }
@@ -58,7 +58,7 @@ std::vector<float> generate_test_data(size_t size, int pattern = 0) {
     return data;
 }
 
-// 验证解压缩结果的正确性
+//translated comment
 bool verify_decompression(const std::vector<float>& original, 
                          const float* decompressed, 
                          size_t size,
@@ -94,11 +94,11 @@ bool verify_decompression(const std::vector<float>& original,
     return true;
 }
 
-// 带详细时间统计的ELF Star压缩测试函数 - 使用完整接口
+//ELF Star -
 CompressionInfo test_elf_star_compression_with_timing_32(const std::vector<float>& original, float error_bound = 1e-7) {
     CompressionInfo result;
     
-    // 压缩测试 - 使用完整接口
+    //translated comment
     uint8_t* compressed = nullptr;
     int64_t* compressed_lengths = nullptr;
     int64_t* compressed_offsets = nullptr;
@@ -126,9 +126,9 @@ CompressionInfo test_elf_star_compression_with_timing_32(const std::vector<float
     
     auto compress_end = std::chrono::high_resolution_clock::now();
     const double compress_time = std::chrono::duration<double, std::milli>(compress_end - compress_start).count();
-    // std::cout << "压缩成功: " << num_blocks << " 个块，总大小 " << compress_result << " 字节" << std::endl;
+    //std::cout << " : " << num_blocks << " ， " << compress_result << " " << std::endl;
     
-    // 构建解压缩所需的参数
+    //translated comment
     std::vector<size_t> in_offsets(num_blocks + 1);
     std::vector<size_t> in_lengths(num_blocks);
     std::vector<size_t> out_offsets(num_blocks);
@@ -140,7 +140,7 @@ CompressionInfo test_elf_star_compression_with_timing_32(const std::vector<float
     }
     in_offsets[num_blocks] = compressed_offsets[num_blocks];
     
-    // 解压测试 - 使用完整接口
+    //translated comment
     std::vector<float> decompressed(original.size());
 
     auto decompress_start = std::chrono::high_resolution_clock::now();
@@ -152,7 +152,7 @@ CompressionInfo test_elf_star_compression_with_timing_32(const std::vector<float
         decompressed.data(),
         out_offsets.data(),
         num_blocks,
-        &timing_info  // 会更新解压时间信息
+        &timing_info  //translated comment
     );
     
     auto decompress_end = std::chrono::high_resolution_clock::now();
@@ -164,7 +164,7 @@ CompressionInfo test_elf_star_compression_with_timing_32(const std::vector<float
         return result;
     }
     
-    // 验证解压缩结果
+    //translated comment
     bool data_valid = verify_decompression(original, decompressed.data(), decompressed.size(), error_bound);
     if (!data_valid) {
         result.original_size_mb=-1;
@@ -176,7 +176,7 @@ CompressionInfo test_elf_star_compression_with_timing_32(const std::vector<float
         std::cerr << "ELF Star压缩/解压缩数据验证成功!!!!!!!!" << std::endl;
     }
     
-    // 性能指标计算
+    //translated comment
     const double original_bytes = original.size() * sizeof(float);
     const double compress_ratio = compress_result / original_bytes;
     
@@ -186,29 +186,29 @@ CompressionInfo test_elf_star_compression_with_timing_32(const std::vector<float
     const double compression_throughput_GBs = original_GB / compress_sec;
     const double decompression_throughput_GBs = original_GB / decompress_sec;
     
-    // 填充结果结构体 - 适配用户的CompressionInfo结构
+    //- CompressionInfo
     result.original_size_mb = original_bytes / (1024.0 * 1024.0);
     result.compressed_size_mb = compress_result / (1024.0 * 1024.0);
     result.compression_ratio = compress_ratio;
-    result.comp_kernel_time = timing_info.compress_kernel_time;        // 压缩核函数时间
-    result.comp_time = compress_time;                                  // 压缩总时间
-    result.comp_throughput = compression_throughput_GBs;               // 压缩吞吐量
-    result.decomp_kernel_time = timing_info.decompress_kernel_time;    // 解压核函数时间
-    result.decomp_time = decompress_time;                              // 解压总时间
-    result.decomp_throughput = decompression_throughput_GBs;           // 解压吞吐量
+    result.comp_kernel_time = timing_info.compress_kernel_time;        //translated comment
+    result.comp_time = compress_time;                                  //translated comment
+    result.comp_throughput = compression_throughput_GBs;               //translated comment
+    result.decomp_kernel_time = timing_info.decompress_kernel_time;    //translated comment
+    result.decomp_time = decompress_time;                              //translated comment
+    result.decomp_throughput = decompression_throughput_GBs;           //translated comment
     
-    // 清理内存
+    //translated comment
     elf_star_free_encode_result_32(compressed, compressed_lengths, 
                                compressed_offsets, decompressed_offsets);
     
     return result;
 }
 
-// 简化版本：不使用详细时间统计的测试函数 - 使用完整接口
+//translated comment
 CompressionInfo test_elf_star_compression_simple(const std::vector<float>& original, float error_bound = 0.0) {
     CompressionInfo result;
     
-    // 压缩测试 - 使用完整接口
+    //translated comment
     uint8_t* compressed = nullptr;
     int64_t* compressed_lengths = nullptr;
     int64_t* compressed_offsets = nullptr;
@@ -234,9 +234,9 @@ CompressionInfo test_elf_star_compression_simple(const std::vector<float>& origi
         return result;
     }
     
-    // std::cout << "压缩成功: " << num_blocks << " 个块，总大小 " << compress_result << " 字节" << std::endl;
+    //std::cout << " : " << num_blocks << " ， " << compress_result << " " << std::endl;
     
-    // 构建解压缩所需的参数
+    //translated comment
     std::vector<size_t> in_offsets(num_blocks + 1);
     std::vector<size_t> in_lengths(num_blocks);
     std::vector<size_t> out_offsets(num_blocks);
@@ -248,7 +248,7 @@ CompressionInfo test_elf_star_compression_simple(const std::vector<float>& origi
     }
     in_offsets[num_blocks] = compressed_offsets[num_blocks];
     
-    // 解压测试 - 使用完整接口
+    //translated comment
     std::vector<float> decompressed(original.size());
     
     auto decompress_start = std::chrono::high_resolution_clock::now();
@@ -271,14 +271,14 @@ CompressionInfo test_elf_star_compression_simple(const std::vector<float>& origi
         return result;
     }
     
-    // 验证解压缩结果
+    //translated comment
     bool data_valid = verify_decompression(original, decompressed.data(), decompressed.size(), error_bound);
     
     if (!data_valid) {
         std::cerr << "ELF Star压缩/解压缩数据验证失败" << std::endl;
     }
     
-    // 性能指标计算
+    //translated comment
     const double original_bytes = original.size() * sizeof(float);
     const double compress_ratio = compress_result / original_bytes;
     const double compress_time = std::chrono::duration<double, std::milli>(compress_end - compress_start).count();
@@ -290,31 +290,31 @@ CompressionInfo test_elf_star_compression_simple(const std::vector<float>& origi
     const double compression_throughput_GBs = original_GB / compress_sec;
     const double decompression_throughput_GBs = original_GB / decompress_sec;
     
-    // 填充结果结构体 - 适配用户的CompressionInfo结构
+    //- CompressionInfo
     result.original_size_mb = original_bytes / (1024.0 * 1024.0);
     result.compressed_size_mb = compress_result / (1024.0 * 1024.0);
     result.compression_ratio = compress_ratio;
-    result.comp_kernel_time = 0;  // 简化版本没有核函数单独计时
+    result.comp_kernel_time = 0;  //translated comment
     result.comp_time = compress_time;
     result.comp_throughput = compression_throughput_GBs;
-    result.decomp_kernel_time = 0;  // 简化版本没有核函数单独计时
+    result.decomp_kernel_time = 0;  //translated comment
     result.decomp_time = decompress_time;
     result.decomp_throughput = decompression_throughput_GBs;
     
-    // 清理内存
+    //translated comment
     elf_star_free_encode_result_32(compressed, compressed_lengths, 
                                compressed_offsets, decompressed_offsets);
     
     return result;
 }
 
-// 文件测试模板（类似LZ4测试代码）- 使用完整接口
+//translated comment
 CompressionInfo test_compression_file_32(const std::string& file_path) {
     std::vector<float> oriData = read_data_float(file_path);
     return test_elf_star_compression_with_timing_32(oriData);
 }
 
-// 单个测试用例 - 使用完整接口
+//translated comment
 bool run_test_case(const std::string& test_name, 
                    const std::vector<float>& test_data) {
     std::cout << "\n=== 测试用例: " << test_name << " ===\n";
@@ -333,17 +333,17 @@ bool run_test_case(const std::string& test_name,
     }
 }
 
-// 主测试函数
+//translated comment
 int main(int argc, char *argv[]) {
     
-    // 初始化CUDA设备
+    //CUDA
     cudaFree(0);
     
     if (argc < 2) {
         std::cout << "ELF Star 压缩算法测试程序（使用完整接口）\n";
         std::cout << "====================================================\n";
         
-        // 检查CUDA设备
+        //CUDA
         int device_count = 0;
         cudaError_t cuda_status = cudaGetDeviceCount(&device_count);
         if (cuda_status != cudaSuccess) {
@@ -359,7 +359,7 @@ int main(int argc, char *argv[]) {
             std::cout << "使用设备: " << prop.name << std::endl;
         }
         
-        // 运行测试用例
+        //translated comment
         std::vector<std::pair<std::string, std::vector<float>>> test_cases;
         
         test_cases.emplace_back("小规模随机数据", generate_test_data(1000, 0));
@@ -379,7 +379,7 @@ int main(int argc, char *argv[]) {
             }
         }
         
-        // 测试总结
+        //translated comment
         std::cout << "\n============================\n";
         std::cout << "测试总结: " << passed_tests << "/" << total_tests << " 通过\n";
         
@@ -397,7 +397,7 @@ int main(int argc, char *argv[]) {
     if (arg == "--dir" && argc >= 3) {
         std::string dir_path = argv[2];
         
-        // 检查目录是否存在
+        //translated comment
         if (!fs::exists(dir_path)) {
             std::cerr << "指定的数据目录不存在: " << dir_path << std::endl;
             return 1;
@@ -423,7 +423,7 @@ int main(int argc, char *argv[]) {
                 
                 std::cout << "\nProcessing file: " << file_path << std::endl;
                 
-                // 运行3次取平均值（类似LZ4测试代码）
+                //translated comment
                 for (int i = 0; i < 3; i++) {
                     avg_result += test_compression_file_32(file_path);
                 }

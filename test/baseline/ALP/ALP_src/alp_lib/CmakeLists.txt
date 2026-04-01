@@ -7,10 +7,10 @@ add_library(ALP SHARED
     src/fastlanes_unffor.cpp
 )
 
-# 设置 include 目录
+# include
 target_include_directories(ALP PUBLIC include)
 
-# 可选的 Clang-Tidy 设置
+# Clang-Tidy
 find_program(CLANG_TIDY_EXE NAMES clang-tidy)
 if (CLANG_TIDY_EXE)
     set_target_properties(ALP PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_EXE}")

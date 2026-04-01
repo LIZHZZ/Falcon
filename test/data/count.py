@@ -49,10 +49,10 @@ def count_decimal_places(num_str: str) -> int:
       - 若无科学计数法，直接统计小数点后的位数，去掉末尾0。
     """
     s = num_str.strip(TRIM_CHARS).lower()
-    # 去掉正负号
+    #translated comment
     if s.startswith(('+','-')):
         s = s[1:]
-    # 科学计数法分离
+    #translated comment
     if 'e' in s:
         mantissa, exp = s.split('e', 1)
         try:
@@ -64,12 +64,12 @@ def count_decimal_places(num_str: str) -> int:
 
     if '.' in mantissa:
         int_part, frac = mantissa.split('.', 1)
-        frac = frac.rstrip('0')  # 去掉小数末尾的0
+        frac = frac.rstrip('0')  #translated comment
         dec_in_mantissa = len(frac)
     else:
         dec_in_mantissa = 0
 
-    # 负指数会增加小数位，正指数会减少小数位
+    #translated comment
     dec = dec_in_mantissa - k
     return dec if dec > 0 else 0
 
@@ -84,7 +84,7 @@ def count_significant_digits(num_str: str) -> int:
     s = num_str.strip(TRIM_CHARS).lower()
     if s.startswith(('+','-')):
         s = s[1:]
-    # 排除无穷/NaN等
+    #/NaN
     if s in ('nan', 'inf'):
         return 0
 
@@ -98,23 +98,23 @@ def count_significant_digits(num_str: str) -> int:
     if not digits:
         return 0
 
-    # 检测是否全为0
+    #translated comment
     if all(d == '0' for d in digits):
         return 1
 
-    # 去掉前导0
+    #translated comment
     first_non_zero = 0
     while first_non_zero < len(digits) and digits[first_non_zero] == '0':
         first_non_zero += 1
     if first_non_zero >= len(digits):
-        # 形如 "0.0001200" 这种情况，上面全零判断会提前返回；这里防御
+        #translated comment
         return 1
 
     if has_decimal:
-        # 有小数点：从第一个非零到结尾，全部算有效（包括尾随0）
+        #translated comment
         return len(digits) - first_non_zero
     else:
-        # 无小数点：尾随0不算有效
+        #translated comment
         end = len(digits)
         while end > first_non_zero and digits[end - 1] == '0':
             end -= 1
@@ -127,8 +127,8 @@ def iter_number_tokens_from_text_file(path: Path) -> Iterable[str]:
     """
     with path.open('r', encoding='utf-8', errors='ignore') as f:
         for line in f:
-            # 先用常见分隔符切分
-            # 注意：这是一种启发式方法，若你的文件包含千位分隔符等，请先清洗。
+            #translated comment
+            #translated comment
             for raw in re.split(r'[,\s;]+', line.strip()):
                 tok = raw.strip(TRIM_CHARS)
                 if tok and is_number_token(tok):
@@ -150,7 +150,7 @@ def analyze_file(path: Path) -> Tuple[int, Optional[float], Optional[int], Optio
             decimals.append(dp)
             sigs.append(sd)
     except Exception as e:
-        # 若某文件有编码/格式问题，不中断整体流程
+        #translated comment
         print(f"[WARN] 解析失败: {path} -> {e}")
 
     if not decimals or not sigs:
@@ -219,9 +219,9 @@ def main() -> None:
             "max_sig_digits": max_sd,
         })
 
-    # 打印表格（简版）
+    #translated comment
     if rows:
-        # 对齐打印
+        #translated comment
         cols = ["dataset", "count", "avg_decimal_places", "max_decimal_places", "avg_sig_digits", "max_sig_digits", "file"]
         header = "\t".join(cols)
         print("\n" + header)
@@ -231,7 +231,7 @@ def main() -> None:
     else:
         print("未找到匹配的文件或未解析到任何数值。")
 
-    # 保存 CSV
+    #CSV
     try:
         import csv
         out_csv = (Path.cwd() / args.save).resolve()

@@ -1,6 +1,6 @@
 
-// 优化后的 Falcon_float_decompressor.cuh.cu
-// 主要优化：内存访问模式、并行度、位操作效率、错误处理
+//Falcon_float_decompressor.cuh.cu
+//translated comment
 //
 
 #include "Falcon_float_decompressor.cuh"
@@ -11,29 +11,29 @@
 #include <iostream>
 #include <iomanip>
 
-// 常量定义
+//translated comment
 __constant__ float POW10_TABLE[10] = {
     1.0, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, 10000000.0,
     100000000.0, 1000000000.0
 };
 
-// ZigZag 解码 - 内联优化
+//ZigZag -
 __device__ __forceinline__ int32_t zigzag_decode(uint32_t n) {
     return (int32_t)(n >> 1) ^ -((int32_t)(n & 1));
 }
 
-// 优化的按位读取函数 - 减少循环开销
+//translated comment
 __device__ __forceinline__ uint32_t readBitsDevice(const unsigned char* buffer, size_t& bitPos, int n) {
     if (n == 0) return 0;
-    if (n > 32) n = 32; // 防护
+    if (n > 32) n = 32; //translated comment
     
     uint32_t result = 0;
     size_t startByte = bitPos / 8;
     int startBit = bitPos % 8;
     
-    // 优化：尽量按字节对齐读取
+    //translated comment
     if (startBit == 0 && n >= 8) {
-        // 字节对齐情况下的快速读取
+        //translated comment
         int fullBytes = n / 8;
         for (int i = 0; i < fullBytes; i++) {
             result |= ((uint64_t)buffer[startByte + i]) << (i * 8);
@@ -44,7 +44,7 @@ __device__ __forceinline__ uint32_t readBitsDevice(const unsigned char* buffer, 
             result |= lastBits << (fullBytes * 8);
         }
     } else {
-        // 非对齐情况的优化读取
+        //translated comment
         for (int i = 0; i < n; i++) {
             size_t byteIdx = (bitPos + i) / 8;
             int bitIdx = (bitPos + i) % 8;
@@ -68,7 +68,7 @@ __device__ float decodeFloatWithSignLast(uint32_t value) {
     return val.d;
 }
 
-// 优化的核函数 - 使用更好的内存访问模式和共享内存
+//translated comment
 __global__ void decompressKernelOptimized(
     const unsigned char* __restrict__ compressedData,
     float* __restrict__ output,
@@ -81,12 +81,12 @@ __global__ void decompressKernelOptimized(
     int numData = min(numDatas - blockId * 1025, 1025);
     
     if (numData <= 0) return;
-    // 使用寄存器变量减少全局内存访问
+    //translated comment
     const unsigned char* blockData = compressedData + offsets[blockId];
     size_t bitPos = 0;
 
 
-    // 读取头部信息
+    //translated comment
     uint32_t bitSize = readBitsDevice(blockData, bitPos, 32);
     int32_t firstValue = (int32_t)readBitsDevice(blockData, bitPos, 32);
     unsigned char maxDecimalPlaces = (unsigned char)readBitsDevice(blockData, bitPos, 8);
@@ -99,7 +99,7 @@ __global__ void decompressKernelOptimized(
 
 
     if (bitCount == 0 || bitCount > 32) {
-        // 填充默认值而不是返回
+        //translated comment
         for (int i = 0; i < numData; i++) {
             output[blockId * 1025 + i] = 0.0;
         }
@@ -110,11 +110,11 @@ __global__ void decompressKernelOptimized(
     int dataByte = (numData - 1 + 7) / 8;
     int flag2Size = (dataByte + 7) / 8;
     
-    // 使用栈上数组，减少内存分配开销
+    //translated comment
     uint8_t result[32][128];
     uint8_t flag2[32][128];
     
-    // 优化的内存初始化
+    //translated comment
     #pragma unroll
     for (int i = 0; i < 32; i++) {
         #pragma unroll 4
@@ -123,17 +123,17 @@ __global__ void decompressKernelOptimized(
         }
     }
 
-    // 读取压缩数据 - 优化循环结构
+    //translated comment
     for (int i = 0; i < bitCount; i++) {
         bool isSparse = (flag1 & (1ULL << i)) != 0;
         
         if (isSparse) {
-            // 读取稀疏标志
+            //translated comment
             for (int z = 0; z < flag2Size * 8; z++) {
                 flag2[i][z] = (uint8_t)readBitsDevice(blockData, bitPos, 1);
             }
             
-            // 根据稀疏标志读取数据
+            //translated comment
             for (int j = 0; j < dataByte; j++) {
                 if (flag2[i][j] != 0) {
                     result[i][j] = (uint8_t)readBitsDevice(blockData, bitPos, 8);
@@ -142,20 +142,20 @@ __global__ void decompressKernelOptimized(
                 }
             }
         } else {
-            // 非稀疏情况，直接读取所有字节
+            //translated comment
             for (int j = 0; j < dataByte; j++) {
                 result[i][j] = (uint8_t)readBitsDevice(blockData, bitPos, 8);
             }
         }
     }
 
-    // 重构delta解码 - 使用更高效的位操作
+    //delta -
     uint32_t deltasZigzag[1024];
     #pragma unroll 4
     for (int j = 0; j < numData-1; j++) {
         uint32_t delta = 0;
         int byteIndex = j / 8;
-        int bitIndex = 7 - (j % 8); // 预计算位索引
+        int bitIndex = 7 - (j % 8); //translated comment
         
         for (int i = 0; i < bitCount; i++) {
             uint8_t bitValue = (result[i][byteIndex] >> bitIndex) & 1;
@@ -164,7 +164,7 @@ __global__ void decompressKernelOptimized(
         deltasZigzag[j] = delta;
     }
 
-    // 解码和前缀求和 - 合并到一个循环中
+    //translated comment
     int32_t prevValue = firstValue;
     
     float scale = (maxBeta > 6||maxDecimalPlaces>6) ? 1.0 : 
@@ -197,7 +197,7 @@ __global__ void decompressKernelOptimized(
     // }
 }
 
-// 优化的主机端解压缩函数，包括CPU-GPU数据传输，主机偏移计算
+//， CPU-GPU ，
 void FalconDecompressor::decompress(const std::vector<unsigned char>& compressedData, std::vector<float>& output, int numDatas) {
     size_t dataSize = compressedData.size();
     if (dataSize == 0 || numDatas <= 0) {
@@ -209,21 +209,21 @@ void FalconDecompressor::decompress(const std::vector<unsigned char>& compressed
     cudaEventCreate(&kernal_start_event);
     cudaEventCreate(&kernal_end_event);
 
-    // 预分配offsets向量以减少重分配
+    //offsets
     std::vector<int> offsets;
-    offsets.reserve((numDatas + 1024) / 1025); // 预估块数
+    offsets.reserve((numDatas + 1024) / 1025); //translated comment
     
     BitReader reader(compressedData);
     size_t totalBits = dataSize * 8;
     
-    // 优化的偏移计算 - 与原始代码保持兼容
+    //translated comment
     while (reader.getBitPos() + 32 + 32 + 8 + 8 + 32 <= totalBits) {
         offsets.push_back(reader.getBitPos() / 8);
         uint64_t bitSize = reader.readBits(32);
         
         if (bitSize < 32) break;
         
-        // 检查是否有足够的位可以跳过
+        //translated comment
         if (reader.getBitPos() + bitSize - 32 > totalBits) break;
         
         reader.advance(bitSize - 32);
@@ -235,12 +235,12 @@ void FalconDecompressor::decompress(const std::vector<unsigned char>& compressed
         return;
     }
 
-    // 使用CUDA内存池或预分配内存（如果可能）
+    //CUDA （ ）
     unsigned char* d_compressedData;
     float* d_output;
     int* d_offsets;
 
-    // 异步内存分配
+    //translated comment
     cudaStream_t stream;
     cudaStreamCreate(&stream);
 
@@ -248,29 +248,29 @@ void FalconDecompressor::decompress(const std::vector<unsigned char>& compressed
     cudaMalloc(&d_output, numDatas * sizeof(float));
     cudaMalloc(&d_offsets, offsets.size() * sizeof(int));
 
-    // 异步内存传输
+    //translated comment
     cudaMemcpyAsync(d_compressedData, compressedData.data(), compressedData.size(), cudaMemcpyHostToDevice, stream);
     cudaMemcpyAsync(d_offsets, offsets.data(), offsets.size() * sizeof(int), cudaMemcpyHostToDevice, stream);
 
-    // 优化的网格配置
-    int threadsPerBlock = 128; // 减少线程数以增加寄存器使用
+    //translated comment
+    int threadsPerBlock = 128; //translated comment
     int blocksPerGrid = (numBlocks + threadsPerBlock - 1) / threadsPerBlock;
 
 
 
     cudaEventRecord(kernal_start_event,stream);
-    // 使用优化的核函数
+    //translated comment
     decompressKernelOptimized<<<blocksPerGrid, threadsPerBlock, 0, stream>>>(
         d_compressedData, d_output, d_offsets,numDatas);
     cudaEventRecord(kernal_end_event,stream);
 
-    // 等待所有操作完成
+    //translated comment
     cudaEventSynchronize(kernal_end_event);
     float totalTime;
     cudaEventElapsedTime(&totalTime, kernal_start_event, kernal_end_event);
     printf("\n解压核函数运行时间：%f\n",totalTime);
 
-    // 检查核函数执行错误
+    //translated comment
     cudaError_t kernelErr = cudaGetLastError();
     if (kernelErr != cudaSuccess) {
         std::cerr << "CUDA Kernel Error: " << cudaGetErrorString(kernelErr) << std::endl;
@@ -279,10 +279,10 @@ void FalconDecompressor::decompress(const std::vector<unsigned char>& compressed
     output.resize(numDatas);
     cudaMemcpyAsync(output.data(), d_output, numDatas * sizeof(float), cudaMemcpyDeviceToHost, stream);
     
-    // 同步流
+    //translated comment
     cudaStreamSynchronize(stream);
     
-    // 清理资源
+    //translated comment
     cudaFree(d_compressedData);
     cudaFree(d_output);
     cudaFree(d_offsets);
@@ -291,7 +291,7 @@ void FalconDecompressor::decompress(const std::vector<unsigned char>& compressed
     // std::cout << "Decompressed " << numBlocks << " blocks, " << numDatas << " elements" << std::endl;
 }
 
-// 优化的Falcon_decompress函数(流式，主机偏移计算，仅压缩无主机数据传输）
+//Falcon_decompress ( ， ， ）
 void FalconDecompressor::Falcon_decompress(float* d_decData, unsigned char* d_cmpBytes, size_t nbEle, size_t cmpSize, cudaStream_t stream) {
     if (nbEle == 0 || cmpSize == 0) return;
 
@@ -299,11 +299,11 @@ void FalconDecompressor::Falcon_decompress(float* d_decData, unsigned char* d_cm
     cudaEventCreate(&kernal_start_event);
     cudaEventCreate(&kernal_end_event);
 
-    // 使用固定大小的临时缓冲区避免动态分配
+    //translated comment
     static thread_local std::vector<unsigned char> hostCmpBytes;
     hostCmpBytes.resize(cmpSize);
 
-    // 异步内存传输
+    //translated comment
     cudaError_t err = cudaMemcpyAsync(hostCmpBytes.data(), d_cmpBytes, cmpSize, cudaMemcpyDeviceToHost, stream);
     if (err != cudaSuccess) {
         std::cerr << "CUDA Error: " << cudaGetErrorString(err) << std::endl;
@@ -312,7 +312,7 @@ void FalconDecompressor::Falcon_decompress(float* d_decData, unsigned char* d_cm
 
     cudaStreamSynchronize(stream);
 
-    // 优化的偏移计算 - 使用更少的边界检查
+    //translated comment
     std::vector<int> offsets;
     offsets.reserve((nbEle + 1024) / 1025);
 
@@ -334,17 +334,17 @@ void FalconDecompressor::Falcon_decompress(float* d_decData, unsigned char* d_cm
 
     int numBlocks = offsets.size();
     if (numBlocks == 0) {
-        // 清零输出数据
+        //translated comment
         cudaMemsetAsync(d_decData, 0, nbEle * sizeof(float), stream);
         return;
     }
 
-    // 使用临时设备内存
+    //translated comment
     int* d_offsets;
     cudaMalloc(&d_offsets, offsets.size() * sizeof(int));
     cudaMemcpyAsync(d_offsets, offsets.data(), offsets.size() * sizeof(int), cudaMemcpyHostToDevice, stream);
 
-    // 优化的核函数调用
+    //translated comment
     int threadsPerBlock = 128;
     int blocksPerGrid = (numBlocks + threadsPerBlock - 1) / threadsPerBlock;
     
@@ -354,15 +354,15 @@ void FalconDecompressor::Falcon_decompress(float* d_decData, unsigned char* d_cm
 
     cudaEventRecord(kernal_end_event,stream);
 
-    // 等待所有操作完成
+    //translated comment
     cudaEventSynchronize(kernal_end_event);
     float totalTime;
     cudaEventElapsedTime(&totalTime, kernal_start_event, kernal_end_event);
     printf("\n解压核函数运行时间：%f\n",totalTime);
-    // 异步清理 - 使用同步版本以保证兼容性
+    //translated comment
     cudaFree(d_offsets);
 
-    // 错误检查（非阻塞）
+    //translated comment
     cudaError_t kernelErr = cudaGetLastError();
     if (kernelErr != cudaSuccess) {
         std::cerr << "Kernel execution error: " << cudaGetErrorString(kernelErr) << std::endl;
@@ -371,13 +371,13 @@ void FalconDecompressor::Falcon_decompress(float* d_decData, unsigned char* d_cm
     cudaEventDestroy(kernal_end_event);
 }
 
-// 设备端偏移计算核函数
+//translated comment
 __global__ void calculateOffsetsKernel(const unsigned char* d_cmpBytes,
                                       int* d_offsets,
                                       int* d_numBlocks,
                                       size_t cmpSize,
                                       size_t nbEle) {
-    if (threadIdx.x != 0 || blockIdx.x != 0) return; // 单线程执行
+    if (threadIdx.x != 0 || blockIdx.x != 0) return; //translated comment
 
     size_t bitPos = 0;
     size_t totalBits = cmpSize * 8;
@@ -391,7 +391,7 @@ __global__ void calculateOffsetsKernel(const unsigned char* d_cmpBytes,
         uint32_t bitSize = readBitsDevice(d_cmpBytes, bitPos, 32);
 
         if (bitSize <32) break;
-        // printf("解压 Chunk %d: offset=%d, size= %dbytes\n",offsetCount,d_offsets[offsetCount],(bitSize+7)/8);
+        //printf(" Chunk %d: offset=%d, size= %dbytes\n",offsetCount,d_offsets[offsetCount],(bitSize+7)/8);
         size_t nextPos = bitPos + bitSize - 32;
         if (nextPos > totalBits) break;
 
@@ -401,7 +401,7 @@ __global__ void calculateOffsetsKernel(const unsigned char* d_cmpBytes,
 
     *d_numBlocks = offsetCount;
 }
-// 优化后的流式解压接口，采用核函数计算偏移
+//translated comment
 void FalconDecompressor::Falcon_decompress_stream_optimized(float* d_decData,
                                      unsigned char* d_cmpBytes,
                                      size_t nbEle,
@@ -409,13 +409,13 @@ void FalconDecompressor::Falcon_decompress_stream_optimized(float* d_decData,
                                      cudaStream_t stream) {
     if (nbEle == 0 || cmpSize == 0) return;
 
-    // 预估最大块数
+    //translated comment
     int maxBlocks = (nbEle + 1024) / 1025;
     if(maxBlocks<=0)
     {
         return;
     }
-    // 分配设备内存用于偏移和块数
+    //translated comment
     int* d_offsets;
     int* d_numBlocks;
 
@@ -429,14 +429,14 @@ void FalconDecompressor::Falcon_decompress_stream_optimized(float* d_decData,
         return;
     }
 
-    // 初始化块数为0
+    //translated comment
     cudaMemsetAsync(d_numBlocks, 0, sizeof(int), stream);
 
-    // 在GPU上计算偏移
+    //GPU
     calculateOffsetsKernel<<<1, 1, 0, stream>>>(
         d_cmpBytes, d_offsets, d_numBlocks, cmpSize, nbEle);
 
-    // 检查核函数执行
+    //translated comment
     cudaError_t kernelErr = cudaGetLastError();
     if (kernelErr != cudaSuccess) {
         // std::cerr << "Offset calculation kernel error: " << cudaGetErrorString(kernelErr) << std::endl;
@@ -444,18 +444,18 @@ void FalconDecompressor::Falcon_decompress_stream_optimized(float* d_decData,
         cudaFreeAsync(d_numBlocks, stream);
         return;
     }
-    // 调用解压核函数
+    //translated comment
     int threadsPerBlock = 128;
     int blocksPerGrid = (maxBlocks+ threadsPerBlock - 1) / threadsPerBlock;
 
     decompressKernelOptimized<<<blocksPerGrid, threadsPerBlock, 0, stream>>>(
         d_cmpBytes, d_decData, d_offsets, nbEle);
 
-    // 异步清理内存
+    //translated comment
     cudaFreeAsync(d_offsets, stream);
     cudaFreeAsync(d_numBlocks, stream);
 
-    // 错误检查
+    //translated comment
     kernelErr = cudaGetLastError();
     if (kernelErr != cudaSuccess) {
         std::cerr << "Decompression kernel error: " << cudaGetErrorString(kernelErr) << std::endl;
@@ -463,7 +463,7 @@ void FalconDecompressor::Falcon_decompress_stream_optimized(float* d_decData,
 }
 
 
-// 将小端字节数组转换为 uint32_t
+//uint32_t
 uint32_t bytesToUInt(const unsigned char* bytes) {
     uint32_t val = 0;
     for(int i = 0; i < 8; i++) {
@@ -472,7 +472,7 @@ uint32_t bytesToUInt(const unsigned char* bytes) {
     return val;
 }
 
-// 将小端字节数组转换为 int64_t
+//int64_t
 int32_t bytesToInt(const unsigned char* bytes) {
     int32_t val = 0;
     for(int i = 0; i < 8; i++) {
@@ -481,12 +481,12 @@ int32_t bytesToInt(const unsigned char* bytes) {
     return val;
 }
 
-// ZigZag 解码函数
+//ZigZag
 int32_t zigzag_decode1(uint32_t n) {
     return (n >> 1) ^ -(n & 1);
 }
 
-// 将位表示转换为双精度浮点数（主机端）
+//translated comment
 float bitsToFloatHost(uint32_t bits) {
     float d;
     std::memcpy(&d, &bits, sizeof(d));

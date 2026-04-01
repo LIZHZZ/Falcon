@@ -12,20 +12,20 @@ CompressionInfo run_patas_once(const std::vector<double>& oriData) {
     CompressionInfo info;
     size_t data_count = oriData.size();
     
-    // 分配缓冲区
-    uint8_t*  data_arr        = new uint8_t[data_count * 16]; // 足够的空间
+    //translated comment
+    uint8_t*  data_arr        = new uint8_t[data_count * 16]; //translated comment
     uint16_t* packed_metadata = new uint16_t[data_count];
     uint64_t* dec_arr         = new uint64_t[data_count];
     alp_bench::patas::PatasUnpackedValueStats* unpacked_data = 
         new alp_bench::patas::PatasUnpackedValueStats[data_count];
     
-    // 初始化编码器
+    //translated comment
     alp_bench::patas::PatasCompressionState<uint64_t, false> patas_state;
     patas_state.Reset();
     patas_state.SetOutputBuffer(data_arr);
     patas_state.packed_data_buffer.SetBuffer(packed_metadata);
     
-    // 过滤NaN值
+    //NaN
     std::vector<double> filtered_data;
     filtered_data.reserve(data_count);
     for (size_t i = 0; i < data_count; i++) {
@@ -46,7 +46,7 @@ CompressionInfo run_patas_once(const std::vector<double>& oriData) {
     size_t valid_count = filtered_data.size();
     uint64_t* uint64_p = reinterpret_cast<uint64_t*>(filtered_data.data());
     
-    // ===== 压缩阶段 =====
+    //translated comment
     auto comp_start = std::chrono::high_resolution_clock::now();
     
     for (size_t i = 0; i < valid_count; i++) {
@@ -58,19 +58,19 @@ CompressionInfo run_patas_once(const std::vector<double>& oriData) {
     
     auto comp_end = std::chrono::high_resolution_clock::now();
     
-    // ===== 解压缩阶段 =====
+    //translated comment
     alp_bench::ByteReader byte_reader;
     byte_reader.SetStream(data_arr);
     
     auto decomp_start = std::chrono::high_resolution_clock::now();
     
-    // 解包元数据
+    //translated comment
     for (size_t i = 0; i < valid_count; i++) {
         alp_bench::PackedDataUtils<uint64_t>::Unpack(packed_metadata[i],
                                                      (alp_bench::UnpackedData&)unpacked_data[i]);
     }
     
-    // 解压缩数据
+    //translated comment
     dec_arr[0] = 0; 
     for (size_t i = 0; i < valid_count; i++) {
         dec_arr[i] = alp_bench::patas::PatasDecompression<uint64_t>::DecompressValue(
@@ -82,7 +82,7 @@ CompressionInfo run_patas_once(const std::vector<double>& oriData) {
     
     auto decomp_end = std::chrono::high_resolution_clock::now();
     
-    // ===== 验证正确性 =====
+    //translated comment
     double* dec_dbl_p = reinterpret_cast<double*>(dec_arr);
     size_t error_count = 0;
     for (size_t i = 0; i < valid_count && i < 10; i++) {
@@ -96,28 +96,28 @@ CompressionInfo run_patas_once(const std::vector<double>& oriData) {
         }
     }
     
-    // 计算统计信息
+    //translated comment
     auto comp_time_ms = std::chrono::duration<double, std::milli>(comp_end - comp_start).count();
     auto decomp_time_ms = std::chrono::duration<double, std::milli>(decomp_end - decomp_start).count();
     
     size_t original_size = valid_count * sizeof(double);
     size_t total_compressed_size = compressed_size + metadata_size;
     
-    // 转换为 MB
+    //translated comment
     double original_size_mb = original_size / (1024.0 * 1024.0);
     double compressed_size_mb = total_compressed_size / (1024.0 * 1024.0);
     
     info.original_size_mb = original_size_mb;
     info.compressed_size_mb = compressed_size_mb;
-    info.compression_ratio = (double)total_compressed_size / (double)original_size;  // 与其他方法一致：compressed/original
-    info.comp_kernel_time = 0.0;  // CPU版本无kernel时间
+    info.compression_ratio = (double)total_compressed_size / (double)original_size;  //：compressed/original
+    info.comp_kernel_time = 0.0;  //CPU kernel
     info.comp_time = comp_time_ms;
     info.comp_throughput = original_size_mb / 1024.0 / (comp_time_ms / 1000.0);  // GB/s
-    info.decomp_kernel_time = 0.0;  // CPU版本无kernel时间
+    info.decomp_kernel_time = 0.0;  //CPU kernel
     info.decomp_time = decomp_time_ms;
     info.decomp_throughput = original_size_mb / 1024.0 / (decomp_time_ms / 1000.0);  // GB/s
     
-    // 清理
+    //translated comment
     delete[] data_arr;
     delete[] packed_metadata;
     delete[] dec_arr;
@@ -131,7 +131,7 @@ int main(int argc, char* argv[]) {
     std::string dir_path;
     int iterations = 3;
     
-    // 解析命令行参数
+    //translated comment
     for (int i = 1; i < argc; i++) {
         std::string arg = argv[i];
         if (arg == "--file" && i + 1 < argc) {
@@ -146,7 +146,7 @@ int main(int argc, char* argv[]) {
     std::vector<std::string> files;
     
     if (!dir_path.empty()) {
-        // 处理目录中的所有CSV文件
+        //CSV
         for (const auto& entry : std::filesystem::directory_iterator(dir_path)) {
             if (entry.path().extension() == ".csv") {
                 files.push_back(entry.path().string());
@@ -168,7 +168,7 @@ int main(int argc, char* argv[]) {
     for (const auto& fp : files) {
         std::cout << "文件: " << fp << std::endl;
         
-        // 读取数据
+        //translated comment
         std::vector<double> data = read_data(fp);
         if (data.empty()) {
             std::cerr << "无法读取文件或文件为空" << std::endl;
@@ -177,17 +177,17 @@ int main(int argc, char* argv[]) {
         
         std::cout << "数据量: " << data.size() << std::endl;
         
-        // 多次迭代测试
+        //translated comment
         CompressionInfo total_info;
         for (int iter = 0; iter < iterations; iter++) {
             CompressionInfo info = run_patas_once(data);
             total_info += info;
         }
         
-        // 计算平均值
+        //translated comment
         CompressionInfo avg_info = total_info / iterations;
         
-        // 打印结果
+        //translated comment
         avg_info.print();
         std::cout << std::endl;
     }

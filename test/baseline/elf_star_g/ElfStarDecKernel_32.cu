@@ -1,4 +1,4 @@
-// 🔍 完整调试版本 - 32位解压器
+//translated comment
 
 #include "Elf_Star_g_Kernel_32.cuh"
 #include <BitReader.cuh>
@@ -36,7 +36,7 @@ private:
 
     __device__ __forceinline__ void initLeadingRepresentation() {
         // if (blockIdx.x == 0 && threadIdx.x == 0) {
-        //     printf("[XOR-读取] 读取Leading前: buffer=0x%016llX, bitcnt=%lld\n",
+        //printf("[XOR- ] Leading : buffer=0x%016llX, bitcnt=%lld\n",
         //            reader.buffer, reader.bitcnt);
         // }
         
@@ -46,9 +46,9 @@ private:
         leadingRepresentationSize = num;
         
         // if (blockIdx.x == 0 && threadIdx.x == 0) {
-        //     printf("[XOR-读取] Leading位置数=%d, 每值bit数=%d\n", 
+        //printf("[XOR- ] Leading =%d, bit =%d\n",
         //            num, leadingBitsPerValue);
-        //     printf("[XOR-读取] 读取4位后: buffer=0x%016llX, bitcnt=%lld\n",
+        //printf("[XOR- ] 4 : buffer=0x%016llX, bitcnt=%lld\n",
         //            reader.buffer, reader.bitcnt);
         // }
         
@@ -57,14 +57,14 @@ private:
         }
         
         // if (blockIdx.x == 0 && threadIdx.x == 0) {
-        //     printf("[XOR-读取] 读取Leading完成: buffer=0x%016llX, bitcnt=%lld\n",
+        //printf("[XOR- ] Leading : buffer=0x%016llX, bitcnt=%lld\n",
         //            reader.buffer, reader.bitcnt);
         // }
     }
 
     __device__ __forceinline__ void initTrailingRepresentation() {
         // if (blockIdx.x == 0 && threadIdx.x == 0) {
-        //     printf("[XOR-读取] 读取Trailing前: buffer=0x%016llX, bitcnt=%lld\n",
+        //printf("[XOR- ] Trailing : buffer=0x%016llX, bitcnt=%lld\n",
         //            reader.buffer, reader.bitcnt);
         // }
         
@@ -74,9 +74,9 @@ private:
         trailingRepresentationSize = num;
         
         // if (blockIdx.x == 0 && threadIdx.x == 0) {
-        //     printf("[XOR-读取] Trailing位置数=%d, 每值bit数=%d\n", 
+        //printf("[XOR- ] Trailing =%d, bit =%d\n",
         //            num, trailingBitsPerValue);
-        //     printf("[XOR-读取] 读取4位后: buffer=0x%016llX, bitcnt=%lld\n",
+        //printf("[XOR- ] 4 : buffer=0x%016llX, bitcnt=%lld\n",
         //            reader.buffer, reader.bitcnt);
         // }
         
@@ -85,7 +85,7 @@ private:
         }
         
         // if (blockIdx.x == 0 && threadIdx.x == 0) {
-        //     printf("[XOR-读取] 读取Trailing完成: buffer=0x%016llX, bitcnt=%lld\n",
+        //printf("[XOR- ] Trailing : buffer=0x%016llX, bitcnt=%lld\n",
         //            reader.buffer, reader.bitcnt);
         // }
     }
@@ -97,22 +97,22 @@ private:
             first = false;
             
             // if (blockIdx.x == 0 && threadIdx.x == 0) {
-            //     printf("\n[XOR-读取第一个值] 开始\n");
-            //     printf("[XOR-读取] 初始buffer=0x%016llX, bitcnt=%lld, cursor=%lld\n",
+            //printf("\n[XOR- ] \n");
+            //printf("[XOR- ] buffer=0x%016llX, bitcnt=%lld, cursor=%lld\n",
             //            reader.buffer, reader.bitcnt, reader.cursor);
             // }
             
             // if (blockIdx.x == 0 && threadIdx.x == 0) {
-            //     printf("[XOR-读取] 准备读取6位trailingZeros\n");
-            //     printf("[XOR-读取] 读取前buffer=0x%016llX, bitcnt=%lld\n",
+            //printf("[XOR- ] 6 trailingZeros\n");
+            //printf("[XOR- ] buffer=0x%016llX, bitcnt=%lld\n",
             //            reader.buffer, reader.bitcnt);
             // }
             
             int trailingZeros = read_int(6);
             
             // if (blockIdx.x == 0 && threadIdx.x == 0) {
-            //     printf("[XOR-读取] trailingZeros=%d\n", trailingZeros);
-            //     printf("[XOR-读取] 读取后buffer=0x%016llX, bitcnt=%lld\n",
+            //printf("[XOR- ] trailingZeros=%d\n", trailingZeros);
+            //printf("[XOR- ] buffer=0x%016llX, bitcnt=%lld\n",
             //            reader.buffer, reader.bitcnt);
             // }
             
@@ -120,53 +120,53 @@ private:
                 int mantissaBits = 31 - trailingZeros;
                 
                 // if (blockIdx.x == 0 && threadIdx.x == 0) {
-                //     printf("[XOR-读取] mantissaBits=%d\n", mantissaBits);
+                //printf("[XOR- ] mantissaBits=%d\n", mantissaBits);
                 // }
                 
                 if (mantissaBits > 0) {
                     // if (blockIdx.x == 0 && threadIdx.x == 0) {
-                    //     printf("[XOR-读取] 准备读取%d位mantissa\n", mantissaBits);
-                    //     printf("[XOR-读取] 读取前buffer=0x%016llX, bitcnt=%lld\n",
+                    //printf("[XOR- ] %d mantissa\n", mantissaBits);
+                    //printf("[XOR- ] buffer=0x%016llX, bitcnt=%lld\n",
                     //            reader.buffer, reader.bitcnt);
-                    //     printf("[XOR-读取] 当前buffer高%d位: 0x%08X\n",
+                    //printf("[XOR- ] buffer %d : 0x%08X\n",
                     //            mantissaBits, (uint32_t)(reader.buffer >> (64 - mantissaBits)));
                     // }
                     
                     uint32_t mantissa = read_long(mantissaBits);
                     
                     // if (blockIdx.x == 0 && threadIdx.x == 0) {
-                    //     printf("[XOR-读取] 读到mantissa=0x%08X\n", mantissa);
-                    //     printf("[XOR-读取] 读取后buffer=0x%016llX, bitcnt=%lld\n",
+                    //printf("[XOR- ] mantissa=0x%08X\n", mantissa);
+                    //printf("[XOR- ] buffer=0x%016llX, bitcnt=%lld\n",
                     //            reader.buffer, reader.bitcnt);
                     // }
                     
                     storedVal.i = ((mantissa << 1) + 1) << trailingZeros;
                     
                     // if (blockIdx.x == 0 && threadIdx.x == 0) {
-                    //     printf("[XOR-读取] 计算: ((0x%08X << 1) + 1) << %d = 0x%08X\n",
+                    //printf("[XOR- ] : ((0x%08X << 1) + 1) << %d = 0x%08X\n",
                     //            mantissa, trailingZeros, storedVal.i);
-                    //     printf("[XOR-读取] storedVal.f=%.6f\n", storedVal.f);
+                    //printf("[XOR- ] storedVal.f=%.6f\n", storedVal.f);
                     // }
                 } else {
                     storedVal.i = 1 << trailingZeros;
                     
                     // if (blockIdx.x == 0 && threadIdx.x == 0) {
-                    //     printf("[XOR-读取] 特殊情况: mantissaBits=0\n");
-                    //     printf("[XOR-读取] storedVal.i=0x%08X\n", storedVal.i);
+                    //printf("[XOR- ] : mantissaBits=0\n");
+                    //printf("[XOR- ] storedVal.i=0x%08X\n", storedVal.i);
                     // }
                 }
             } else {
                 storedVal.i = 0;
                 
                 // if (blockIdx.x == 0 && threadIdx.x == 0) {
-                //     printf("[XOR-读取] trailingZeros>=32, 值为0\n");
+                //printf("[XOR- ] trailingZeros>=32, 0\n");
                 // }
             }
             
             if (isnan(storedVal.f)) {
                 endOfStream = true;
                 // if (blockIdx.x == 0 && threadIdx.x == 0) {
-                //     printf("[XOR-读取] 检测到NaN, 流结束\n");
+                //printf("[XOR- ] NaN, \n");
                 // }
             }
         } else {
@@ -235,12 +235,12 @@ public:
             length = in[0];
             
             // if (blockIdx.x == 0 && threadIdx.x == 0) {
-            //     printf("[XOR-读取初始化] length=%llu, buffer长度=%llu\n", length, len);
-            //     printf("[XOR-读取初始化] 前4个uint32:\n");
+            //printf("[XOR- ] length=%llu, buffer =%llu\n", length, len);
+            //printf("[XOR- ] 4 uint32:\n");
             //     for (int i = 0; i < 4 && i < len; i++) {
             //         printf("  in[%d]=0x%08X\n", i, in[i]);
             //     }
-            //     printf("[XOR-读取初始化] 初始buffer=0x%016llX\n", reader.buffer);
+            //printf("[XOR- ] buffer=0x%016llX\n", reader.buffer);
             // }
         } else {
             length = 0;
@@ -271,7 +271,7 @@ public:
     }
 };
 
-// ElfStar解压缩器 (使用调试版XOR)
+//ElfStar ( XOR)
 class ElfStarDecompressor_Debug_32 {
 private:
     ElfStarXORDecompressor_Debug_32 xorDecompressor;
@@ -283,34 +283,34 @@ private:
         int first_bit = read_int(1);
         
         // if (blockIdx.x == 0 && threadIdx.x == 0) {
-        //     printf("[ElfStar-读取] 读取标记bit: first=%d\n", first_bit);
+        //printf("[ElfStar- ] bit: first=%d\n", first_bit);
         // }
         
         if (first_bit == 0) {
             v = recoverVByBetaStar();
             
             // if (blockIdx.x == 0 && threadIdx.x == 0) {
-            //     printf("[ElfStar-读取] case '0', 恢复值=%.6f\n", v);
+            //printf("[ElfStar- ] case '0', =%.6f\n", v);
             // }
         } else {
             int second_bit = read_int(1);
             
             // if (blockIdx.x == 0 && threadIdx.x == 0) {
-            //     printf("[ElfStar-读取] second_bit=%d\n", second_bit);
+            //printf("[ElfStar- ] second_bit=%d\n", second_bit);
             // }
             
             if (second_bit == 0) {
                 v = xorDecompressor.readValue();
                 
                 // if (blockIdx.x == 0 && threadIdx.x == 0) {
-                //     printf("[ElfStar-读取] case '10', 直接值=%.6f\n", v);
+                //printf("[ElfStar- ] case '10', =%.6f\n", v);
                 // }
             } else {
                 lastBetaStar = read_int(3);
                 v = recoverVByBetaStar();
                 
                 // if (blockIdx.x == 0 && threadIdx.x == 0) {
-                //     printf("[ElfStar-读取] case '11', betaStar=%d, 恢复值=%.6f\n", 
+                //printf("[ElfStar- ] case '11', betaStar=%d, =%.6f\n",
                 //            lastBetaStar, v);
                 // }
             }
@@ -344,7 +344,7 @@ private:
             v = roundUp_32(vPrime, alpha);
             
             // if (blockIdx.x == 0 && threadIdx.x == 0) {
-            //     printf("[Recover] alpha=%d, 最终值=%.6f\n", alpha, v);
+            //printf("[Recover] alpha=%d, =%.6f\n", alpha, v);
             // }
         }
         
@@ -374,7 +374,7 @@ public:
         }
         
         // if (blockIdx.x == 0 && threadIdx.x == 0) {
-        //     printf("[ElfStar解压] 开始, 期望%d个元素\n", len);
+        //printf("[ElfStar ] , %d \n", len);
         // }
         
         for (int i = 0; i < len; i++) {
@@ -388,19 +388,19 @@ public:
             output[i] = value;
             
             // if (blockIdx.x == 0 && threadIdx.x == 0 && i == 0) {
-            //     printf("[ElfStar解压] 第0个元素=%.6f\n", value);
+            //printf("[ElfStar ] 0 =%.6f\n", value);
             // }
         }
         
         // if (blockIdx.x == 0 && threadIdx.x == 0) {
-        //     printf("[ElfStar解压] 完成, 共%d个元素\n", len);
+        //printf("[ElfStar ] , %d \n", len);
         // }
         
         return len;
     }
 };
 
-// 调试版解压函数
+//translated comment
 __device__ int decompress_method_debug_32(
     uint8_t *d_in, ssize_t len, float *d_out_chunks, int thread_id) {
     
@@ -420,9 +420,9 @@ __device__ int decompress_method_debug_32(
     }
     
     // if (thread_id == 0) {
-    //     printf("\n=== 块%d 解压开始 ===\n", thread_id);
-    //     printf("输入长度: %lld字节\n", (long long)len);
-    //     printf("元素数量: %u\n", num_elements);
+    //printf("\n=== %d ===\n", thread_id);
+    //printf(" : %lld \n", (long long)len);
+    //printf(" : %u\n", num_elements);
     // }
     
     if (num_elements == 0 || num_elements > 100000) {
@@ -438,7 +438,7 @@ __device__ int decompress_method_debug_32(
     int result = decompressor.decompress(d_out_chunks);
     
     // if (thread_id == 0) {
-    //     printf("=== 块%d 解压完成, 返回%d个元素 ===\n\n", thread_id, result);
+    //printf("=== %d , %d ===\n\n", thread_id, result);
     // }
     
     return result;
@@ -451,7 +451,7 @@ __global__ void decompress_kernel_32(const uint8_t* d_in_data,
                                 int num_chunks) {
     int chunk_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-    // 🔥 添加总块数输出
+    //translated comment
     if (chunk_idx == 0) {
         printf("[解压Kernel] 总块数=%d\n", num_chunks);
     }
@@ -468,9 +468,9 @@ __global__ void decompress_kernel_32(const uint8_t* d_in_data,
     const size_t out_offset_start = d_out_offsets[chunk_idx];
     float* p_out_chunk = d_out_data + out_offset_start;
 
-    // 🔥 添加每个块的处理信息
+    //translated comment
     // if (chunk_idx < 3 || chunk_idx == num_chunks - 1) {
-    //     printf("[解压Kernel] 块%d: 输入=%llu-%llu (%lld字节), 输出offset=%llu\\n",
+    //printf("[ Kernel] %d: =%llu-%llu (%lld ), offset=%llu\\n",
     //            chunk_idx, 
     //            (unsigned long long)in_offset_start, 
     //            (unsigned long long)in_offset_end,
@@ -485,9 +485,9 @@ __global__ void decompress_kernel_32(const uint8_t* d_in_data,
     int decompressed_count = decompress_method_debug_32(
         p_in_chunk, in_chunk_len_bytes, p_out_chunk, chunk_idx);
     
-    // 🔥 输出解压结果
+    //translated comment
     // if (chunk_idx < 3 || chunk_idx == num_chunks - 1) {
-    //     printf("[解压Kernel] 块%d解压完成: %d个元素\n",
+    //printf("[ Kernel] %d : %d \n",
     //            chunk_idx, decompressed_count);
     // }
 }

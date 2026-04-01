@@ -1,4 +1,4 @@
-// 单流测试
+//translated comment
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,7 +18,7 @@ namespace fs = std::filesystem;
 
 std::string title = "";
 #define NUM_STREAMS 1 
-// 生成随机数据的函数
+//translated comment
 std::vector<double> generate_test_data(size_t nbEle, int pattern_type = 0) {
     std::vector<double> data(nbEle);
 
@@ -27,7 +27,7 @@ std::vector<double> generate_test_data(size_t nbEle, int pattern_type = 0) {
 
     switch (pattern_type) {
         case 0: {
-            // 随机数据
+            //translated comment
             std::uniform_real_distribution<double> dist(-1000.0, 1000.0);
             for (size_t i = 0; i < nbEle; ++i) {
                 data[i] = dist(gen);
@@ -35,21 +35,21 @@ std::vector<double> generate_test_data(size_t nbEle, int pattern_type = 0) {
             break;
         }
         case 1: {
-            // 线性增长数据
+            //translated comment
             for (size_t i = 0; i < nbEle; ++i) {
                 data[i] = static_cast<double>(i) * 0.01;
             }
             break;
         }
         case 2: {
-            // 正弦波数据
+            //translated comment
             for (size_t i = 0; i < nbEle; ++i) {
                 data[i] = 1000.0 * sin(0.01 * i);
             }
             break;
         }
         case 3: {
-            // 多步阶数据
+            //translated comment
             int step_size = nbEle / 10;
             for (size_t i = 0; i < nbEle; ++i) {
                 data[i] = static_cast<double>((i / step_size) * 100);
@@ -69,20 +69,20 @@ std::vector<double> generate_test_data(size_t nbEle, int pattern_type = 0) {
 
 
 CompressionInfo test_compression(ProcessedData data, size_t chunkSize);
-// 准备数据函数，支持文件和生成数据两种模式
+//translated comment
 ProcessedData prepare_data(const std::string &source_path = "", size_t generate_size = 0, int pattern_type = 0,int fig=-1) {
     ProcessedData result;
     std::vector<double> data;
 
-    // 决定数据来源
+    //translated comment
     if (generate_size > 0) {
-        // 生成指定大小的数据
-        // printf("生成 %zu 个元素的测试数据 (模式: %d)\n", generate_size, pattern_type);
+        //translated comment
+        //printf(" %zu ( : %d)\n", generate_size, pattern_type);
         data = generate_test_data(generate_size, pattern_type);
         result.nbEle = generate_size;
     } else if (!source_path.empty()) {
-        // 从文件读取数据
-        // printf("从文件加载数据: %s\n", source_path.c_str());
+        //translated comment
+        //printf(" : %s\n", source_path.c_str());
         data = read_data(source_path,fig);
         result.nbEle = data.size();
     } else {
@@ -96,12 +96,12 @@ ProcessedData prepare_data(const std::string &source_path = "", size_t generate_
     {
         printf("wrong");
     }
-    // 分配固定内存
+    //translated comment
     cudaCheckError(cudaHostAlloc(&result.oriData, result.nbEle * sizeof(double), cudaHostAllocDefault));
     cudaCheckError(cudaHostAlloc((void**)&result.cmpBytes, result.nbEle * sizeof(double), cudaHostAllocDefault));
     cudaCheckError(cudaHostAlloc((void**)&result.cmpSize, sizeof(unsigned int), cudaHostAllocDefault));
     cudaCheckError(cudaHostAlloc(&result.decData, result.nbEle * sizeof(double), cudaHostAllocDefault));
-    // 将数据拷贝到固定内存
+    //translated comment
 #pragma omp parallel for
     for (size_t i = 0; i < result.nbEle; ++i) {
         result.oriData[i] = data[i];
@@ -144,23 +144,23 @@ void warmup()
             return ;
         }
         printf("GPU预热中...\n");
-        size_t warmup_chunk = data.nbEle; // 单流
+        size_t warmup_chunk = data.nbEle; //translated comment
         FalconPipeline ex(NUM_STREAMS);
         ex.executeCompressionPipeline(data, warmup_chunk);
-        cudaDeviceSynchronize(); // 确保预热完成
+        cudaDeviceSynchronize(); //translated comment
 }
 
 int setChunk(int nbEle)
 {
     size_t chunkSize=1025;
     size_t temp=nbEle/NUM_STREAMS;// (data+temp-1)/temp<NUm_streams
-    //可用的显存
+    //translated comment
     // size_t availableMemory = getAvailableGPUMemory();
     size_t availableMemory, totalMem;
     cudaMemGetInfo(&availableMemory, &totalMem);
     // size_t limit=availableMemory/(4 * NUM_STREAMS * sizeof(double) * 2);
     size_t limit=64*1024*1024/sizeof(double);
-    //最多同时有16流 chunkSize*NUM_STREAMS*8*sizeof(double) * 2<availableMemory/8*
+    //16 chunkSize*NUM_STREAMS*8*sizeof(double) * 2<availableMemory/8*
     while(chunkSize<=limit//MAX_NUMS_PER_CHUNK l
             && chunkSize<=temp)
     {
@@ -171,7 +171,7 @@ int setChunk(int nbEle)
     return chunkSize;
 }
 
-// 主要测试函数 - 支持文件路径或生成数据
+//translated comment
 int test(const std::string &file_path = "", size_t data_size_mb = 0, int pattern_type = 0) {
     // warmup();
     cudaDeviceReset();
@@ -182,22 +182,22 @@ int test(const std::string &file_path = "", size_t data_size_mb = 0, int pattern
         
         CompressionInfo a;
         for(int i = 0; i < 3; i++) {
-            // 每次循环重置GPU并重新准备数据
+            //GPU
             cudaDeviceReset();
             
-            // 重新准备CUDA资源
+            //CUDA
             ProcessedData data = prepare_data(file_path);
             
-            // 计算chunk大小
+            //chunk
             size_t chunkSize = setChunk(data.nbEle);
             
-            // 执行测试
+            //translated comment
             auto tmp = test_compression(data, chunkSize);
             a += tmp;
             
             // printf("Iteration %d - a:%.6f, get:%.6f\n", i+1, a.compression_ratio/(i+1), tmp.compression_ratio);
             
-            // 清理本次迭代的资源
+            //translated comment
             cleanup_data(data);
         }
         a=a/3;
@@ -219,22 +219,22 @@ int test(const std::string &file_path = "", size_t data_size_mb = 0, int pattern
         // cleanup_data(data);
         CompressionInfo a;
         for(int i = 0; i < 3; i++) {
-            // 每次循环重置GPU并重新准备数据
+            //GPU
             cudaDeviceReset();
             
-            // 重新准备CUDA资源
+            //CUDA
             ProcessedData data = prepare_data("", nbEle, pattern_type);
             
-            // 计算chunk大小
+            //chunk
             size_t chunkSize = setChunk(data.nbEle);
             
-            // 执行测试
+            //translated comment
             auto tmp = test_compression(data, chunkSize);
             a += tmp;
             
             // printf("Iteration %d - a:%.6f, get:%.6f\n", i+1, a.compression_ratio/(i+1), tmp.compression_ratio);
             
-            // 清理本次迭代的资源
+            //translated comment
             cleanup_data(data);
         }
         a=a/3;
@@ -246,23 +246,23 @@ int test(const std::string &file_path = "", size_t data_size_mb = 0, int pattern
     }
 }
 
-// 新增: 使用CUDA流的压缩解压测试函数
+//: CUDA
 CompressionInfo comp_stream(std::vector<double> oriData, std::vector<double> &decompData)
 {
 
     size_t nbEle = oriData.size();
-    size_t cmpSize = 0; // 将由压缩函数设置
+    size_t cmpSize = 0; //translated comment
 
-    // 分配设备内存
+    //translated comment
     double* d_oriData;
     double* d_decData;
     unsigned char* d_cmpBytes;
 
-    // 创建CUDA流
+    //CUDA
     cudaStream_t stream;
     cudaStreamCreate(&stream);
 
-    // 创建CUDA事件
+    //CUDA
     cudaEvent_t startEvent, stopEvent;
     cudaEventCreate(&startEvent);
     cudaEventCreate(&stopEvent);
@@ -271,29 +271,29 @@ CompressionInfo comp_stream(std::vector<double> oriData, std::vector<double> &de
     cudaEventCreate(&g_startEvent);
     cudaEventCreate(&g_stopEvent);
     
-    // ===== 完整的压缩流程 =====
-    // std::cout << "开始完整的GPU流式压缩流程\n";
+    //translated comment
+    //std::cout << " GPU \n";
     cudaEventRecord(g_startEvent, stream);
     
-    // 1. 为原始数据分配设备内存并从主机复制到设备c
-    // std::cout << "1. 复制原始数据到设备...\n";
+    //translated comment
+    //std::cout << "1. ...\n";
     cudaMalloc(&d_oriData, nbEle * sizeof(double));
     cudaMalloc(&d_cmpBytes, nbEle * sizeof(double));
     
     cudaMemcpyAsync(d_oriData, oriData.data(), nbEle * sizeof(double), cudaMemcpyHostToDevice, stream);
 
-    // 3. 执行GPU压缩
-    // std::cout << "2. 执行GPU压缩...\n";
+    //3. GPU
+    //std::cout << "2. GPU ...\n";
     cudaEventRecord(startEvent, stream);
     FalconCompressor::Falcon_compress(d_oriData, d_cmpBytes, nbEle, &cmpSize, stream);
     
     cudaEventRecord(stopEvent, stream);
-    // 同步流以确保压缩完成
+    //translated comment
     cudaStreamSynchronize(stream);
 
 
-    // 4. 将压缩数据从设备复制回主机
-    // std::cout << "3. 复制压缩数据回主机...\n";
+    //translated comment
+    //std::cout << "3. ...\n";
     std::vector<unsigned char> h_cmpBytes(cmpSize);
     cudaMemcpyAsync(h_cmpBytes.data(), d_cmpBytes, cmpSize, cudaMemcpyDeviceToHost, stream);
     cudaEventRecord(g_stopEvent, stream);
@@ -305,11 +305,11 @@ CompressionInfo comp_stream(std::vector<double> oriData, std::vector<double> &de
     double compression_ratio = static_cast<double>(cmpSize) / (nbEle * sizeof(double));
 
 
-    // 释放原始数据的设备内存（模拟实际场景中的内存管理）
+    //translated comment
     cudaFree(d_oriData);
     cudaFree(d_cmpBytes);
 
-    // ===== 完整的解压流程 =====
+    //translated comment
     cudaEvent_t startEvent1, stopEvent1;
     cudaEventCreate(&startEvent1);
     cudaEventCreate(&stopEvent1);
@@ -320,23 +320,23 @@ CompressionInfo comp_stream(std::vector<double> oriData, std::vector<double> &de
 
     cudaEventRecord(g_startEvent1, stream);
     
-    // 1. 重新分配设备内存并将压缩数据从主机复制到设备
-    // std::cout << "1. 复制压缩数据到设备...\n";
+    //translated comment
+    //std::cout << "1. ...\n";
     cudaMalloc(&d_cmpBytes, cmpSize);
-        // 2. 为解压数据分配设备内存
+        //translated comment
     cudaMalloc(&d_decData, nbEle * sizeof(double));
     cudaMemcpyAsync(d_cmpBytes, h_cmpBytes.data(), cmpSize, cudaMemcpyHostToDevice, stream);
 
 
-    // 3. 执行GPU解压
-    // std::cout << "2. 执行GPU解压...\n";
+    //3. GPU
+    //std::cout << "2. GPU ...\n";
     cudaEventRecord(startEvent1, stream);
     FalconDecompressor GDFD;
     GDFD.Falcon_decompress_stream_optimized(d_decData, d_cmpBytes, nbEle, cmpSize, stream);
     cudaEventRecord(stopEvent1, stream);
 
-    // 4. 将解压后的数据从设备复制回主机
-    // std::cout << "3. 复制解压数据回主机...\n";
+    //translated comment
+    //std::cout << "3. ...\n";
     decompData.resize(nbEle);
     cudaMemcpyAsync(decompData.data(), d_decData, nbEle * sizeof(double), cudaMemcpyDeviceToHost, stream);
     cudaEventRecord(g_stopEvent1, stream);
@@ -359,12 +359,12 @@ CompressionInfo comp_stream(std::vector<double> oriData, std::vector<double> &de
         end_full_decompress,
         total_decompress_time,
         decompress_throughput};
-    // 释放设备内存和流
+    //translated comment
     cudaFree(d_cmpBytes);
     cudaFree(d_decData);
     cudaStreamDestroy(stream);
 
-    // 验证解压结果的正确性
+    //translated comment
     for (size_t i = 0; i < oriData.size(); ++i) {
         if(abs(oriData[i] -decompData[i])>1e-6) 
         {
@@ -375,9 +375,9 @@ CompressionInfo comp_stream(std::vector<double> oriData, std::vector<double> &de
     printf("comp success\n");
     return tmp;
 }
-// 新增: 测试流式压缩解压
+//translated comment
 CompressionInfo test_stream_compression(const std::string& file_path) {
-    // 读取数据
+    //translated comment
     std::vector<double> oriData = read_data(file_path);
     std::vector<double> decompressedData;
     return comp_stream(oriData, decompressedData);
@@ -401,7 +401,7 @@ int main(int argc, char *argv[]) {
     } else if (arg == "--old-dir" && argc >= 3) {
         std::string dir_path = argv[2];
 
-        // 检查目录是否存在
+        //translated comment
         if (!fs::exists(dir_path)) {
             std::cerr << "指定的数据目录不存在: " << dir_path << std::endl;
             return 1;
@@ -416,9 +416,9 @@ int main(int argc, char *argv[]) {
             }
         }
     }
-    else if (arg == "--dir" && argc >= 3) {//会统计核函数时间
+    else if (arg == "--dir" && argc >= 3) {//translated comment
         std::string dir_path = argv[2];
-        // 检查目录是否存在
+        //translated comment
         if (!fs::exists(dir_path)) {
             std::cerr << "指定的数据目录不存在: " << dir_path << std::endl;
             return 1;
@@ -438,12 +438,12 @@ int main(int argc, char *argv[]) {
                 std::cout <<"正在处理文件: " << file_path << std::endl;
                 for(int i=0;i<3;i++)
                 {
-                    // 在每次测试前重置GPU状态
+                    //GPU
                     cudaDeviceReset();
                     
                     a += test_stream_compression(file_path);
                     
-                    // 强制同步并等待
+                    //translated comment
                     cudaDeviceSynchronize(); 
                 }
                 a=a/3;

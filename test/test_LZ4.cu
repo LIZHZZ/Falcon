@@ -4,7 +4,7 @@
 #include <vector>
 #include <chrono>
 #include <iostream>
-#include <nvcomp/lz4.hpp>  // 引入 nvcomp LZ4 库
+#include <nvcomp/lz4.hpp>  //nvcomp LZ4
 #include <cassert>
 #include <nvcomp/lz4.h>
 #include <cuda_runtime.h>
@@ -13,30 +13,30 @@
 namespace fs = std::filesystem;
 CompressionInfo comp_LZ4(std::vector<double> oriData);
 CompressionInfo test_compression(const std::string& file_path) {
-    // 读取数据
+    //translated comment
     std::vector<double> oriData = read_data(file_path);
     return comp_LZ4(oriData);
 }
 
 CompressionInfo test_beta_compression(const std::string& file_path,int beta) {
-    // 读取数据
+    //translated comment
     std::vector<double> oriData = read_data(file_path,beta);
     return comp_LZ4(oriData);
 }
 
 CompressionInfo comp_LZ4(std::vector<double> oriData)
 {
-    // 获取数据大小
+    //translated comment
     size_t in_bytes = oriData.size() * sizeof(double);
 
-    // 将数据复制到char类型的数组中，因为LZ4压缩处理的是字节数组
+    //char ， LZ4
     char* input_data = reinterpret_cast<char*>(oriData.data());
     
-    // 创建CUDA流
+    //CUDA
     cudaStream_t stream;
     cudaStreamCreate(&stream);
 
-    // 创建CUDA事件用于精确计时
+    //CUDA
     cudaEvent_t start_event, end_event;
     cudaEvent_t compress_h2d_start, compress_h2d_end;
     cudaEvent_t compress_kernel_start, compress_kernel_end;
@@ -60,11 +60,11 @@ CompressionInfo comp_LZ4(std::vector<double> oriData)
     cudaEventCreate(&decompress_d2h_start);
     cudaEventCreate(&decompress_d2h_end);
 
-    // 计算块大小
+    //translated comment
     const size_t chunk_size = 65536;
     const size_t batch_size = (in_bytes + chunk_size - 1) / chunk_size;
 
-    // 分配CUDA内存
+    //CUDA
     char* device_input_data;
     cudaMalloc(&device_input_data, in_bytes);
 
@@ -78,7 +78,7 @@ CompressionInfo comp_LZ4(std::vector<double> oriData)
         }
     }
 
-    // 设置每个块的指针
+    //translated comment
     void** host_uncompressed_ptrs;
     cudaMallocHost(&host_uncompressed_ptrs, sizeof(void*) * batch_size);
     for (size_t i = 0; i < batch_size; ++i) {
@@ -90,17 +90,17 @@ CompressionInfo comp_LZ4(std::vector<double> oriData)
     cudaMalloc(&device_uncompressed_bytes, sizeof(size_t) * batch_size);
     cudaMalloc(&device_uncompressed_ptrs, sizeof(void*) * batch_size);
 
-    // 分配临时空间
+    //translated comment
     size_t temp_bytes;
     nvcompBatchedLZ4CompressGetTempSize(batch_size, chunk_size, nvcompBatchedLZ4DefaultOpts, &temp_bytes);
     void* device_temp_ptr;
     cudaMalloc(&device_temp_ptr, temp_bytes);
 
-    // 获取每个块的最大输出大小
+    //translated comment
     size_t max_out_bytes;
     nvcompBatchedLZ4CompressGetMaxOutputChunkSize(chunk_size, nvcompBatchedLZ4DefaultOpts, &max_out_bytes);
 
-    // 分配压缩后的输出空间
+    //translated comment
     void** host_compressed_ptrs;
     cudaMallocHost(&host_compressed_ptrs, sizeof(void*) * batch_size);
     for (size_t i = 0; i < batch_size; ++i) {
@@ -113,13 +113,13 @@ CompressionInfo comp_LZ4(std::vector<double> oriData)
     size_t* device_compressed_bytes;
     cudaMalloc(&device_compressed_bytes, sizeof(size_t) * batch_size);
 
-    // ======================== 压缩阶段 ========================
+    //translated comment
     // std::cout << "=== Compression Phase ===" << std::endl;
     
-    // 记录整个压缩阶段开始
+    //translated comment
     cudaEventRecord(start_event, stream);
     
-    // H2D: Host to Device 数据传输
+    //H2D: Host to Device
     cudaEventRecord(compress_h2d_start, stream);
     
     cudaMemcpyAsync(device_input_data, input_data, in_bytes, cudaMemcpyHostToDevice, stream);
@@ -129,10 +129,10 @@ CompressionInfo comp_LZ4(std::vector<double> oriData)
     
     cudaEventRecord(compress_h2d_end, stream);
 
-    // KERNEL: 压缩核函数执行
+    //KERNEL:
     cudaEventRecord(compress_kernel_start, stream);
     
-    // 压缩数据
+    //translated comment
     nvcompStatus_t comp_res = nvcompBatchedLZ4CompressAsync(
         device_uncompressed_ptrs,
         device_uncompressed_bytes,
@@ -152,14 +152,14 @@ CompressionInfo comp_LZ4(std::vector<double> oriData)
     
     cudaEventRecord(compress_kernel_end, stream);
 
-    // D2H: Device to Host 压缩结果传输
+    //D2H: Device to Host
     cudaEventRecord(compress_d2h_start, stream);
     
     size_t* host_compressed_bytes = new size_t[batch_size];
     cudaMemcpyAsync(host_compressed_bytes, device_compressed_bytes, 
                    sizeof(size_t) * batch_size, cudaMemcpyDeviceToHost, stream);
     
-    // 将压缩后的数据传回主机
+    //translated comment
     char** host_compressed_data = new char*[batch_size];
     for (size_t i = 0; i < batch_size; ++i) {
         host_compressed_data[i] = new char[max_out_bytes];
@@ -169,7 +169,7 @@ CompressionInfo comp_LZ4(std::vector<double> oriData)
     
     cudaEventRecord(compress_d2h_end, stream);
     
-    // 等待压缩阶段完成并计算时间
+    //translated comment
     cudaStreamSynchronize(stream);
     
     float compress_h2d_time, compress_kernel_time, compress_d2h_time;
@@ -180,21 +180,21 @@ CompressionInfo comp_LZ4(std::vector<double> oriData)
     float total_compress_time = compress_h2d_time + compress_kernel_time + compress_d2h_time;
 
 
-    // 计算压缩率
+    //translated comment
     size_t total_compressed = 0;
     for (size_t i = 0; i < batch_size; ++i) {
         total_compressed += host_compressed_bytes[i];
     }
     double compression_ratio = total_compressed / static_cast<double>(in_bytes);
 
-    // ======================== 解压阶段 ========================
+    //translated comment
     // std::cout << "\n=== Decompression Phase ===" << std::endl;
     
-    // 重新分配设备内存用于解压
+    //translated comment
     char* device_output_data;
     cudaMalloc(&device_output_data, in_bytes);
     
-    // 重新设置解压输出指针
+    //translated comment
     void** host_decompressed_ptrs;
     cudaMallocHost(&host_decompressed_ptrs, sizeof(void*) * batch_size);
     for (size_t i = 0; i < batch_size; ++i) {
@@ -204,7 +204,7 @@ CompressionInfo comp_LZ4(std::vector<double> oriData)
     void** device_decompressed_ptrs;
     cudaMalloc(&device_decompressed_ptrs, sizeof(void*) * batch_size);
 
-    // 分配解压临时缓冲区
+    //translated comment
     size_t decomp_temp_bytes;
     nvcompBatchedLZ4DecompressGetTempSize(batch_size, chunk_size, &decomp_temp_bytes);
     void* device_decomp_temp;
@@ -216,10 +216,10 @@ CompressionInfo comp_LZ4(std::vector<double> oriData)
     size_t* device_actual_uncompressed_bytes;
     cudaMalloc(&device_actual_uncompressed_bytes, sizeof(size_t) * batch_size);
 
-    // H2D: 将压缩数据传回设备
+    //translated comment
     cudaEventRecord(decompress_h2d_start, stream);
     
-    // 重新分配设备压缩数据空间并传输
+    //translated comment
     for (size_t i = 0; i < batch_size; ++i) {
         cudaMemcpyAsync(host_compressed_ptrs[i], host_compressed_data[i], 
                        host_compressed_bytes[i], cudaMemcpyHostToDevice, stream);
@@ -236,10 +236,10 @@ CompressionInfo comp_LZ4(std::vector<double> oriData)
     
     cudaEventRecord(decompress_h2d_end, stream);
 
-    // KERNEL: 解压核函数执行
+    //KERNEL:
     cudaEventRecord(decompress_kernel_start, stream);
     
-    // 解压数据
+    //translated comment
     nvcompStatus_t decomp_res = nvcompBatchedLZ4DecompressAsync(
         device_compressed_ptrs,
         device_compressed_bytes,
@@ -259,7 +259,7 @@ CompressionInfo comp_LZ4(std::vector<double> oriData)
 
     cudaEventRecord(decompress_kernel_end, stream);
 
-    // D2H: 解压结果传回主机
+    //translated comment
     cudaEventRecord(decompress_d2h_start, stream);
     
     char* reconstructed = new char[in_bytes];
@@ -269,7 +269,7 @@ CompressionInfo comp_LZ4(std::vector<double> oriData)
     cudaEventRecord(decompress_d2h_end, stream);
     cudaEventRecord(end_event, stream);
 
-    // 等待所有操作完成并计算时间
+    //translated comment
     cudaStreamSynchronize(stream);
     
     float decompress_h2d_time, decompress_kernel_time, decompress_d2h_time;
@@ -280,7 +280,7 @@ CompressionInfo comp_LZ4(std::vector<double> oriData)
     float total_decompress_time = decompress_h2d_time + decompress_kernel_time + decompress_d2h_time;
     float total_overall_time;
     cudaEventElapsedTime(&total_overall_time, start_event, end_event);
-    // 吞吐量计算
+    //translated comment
     double data_size_gb = in_bytes / (1024.0 * 1024.0 * 1024.0);
     double compress_throughput = data_size_gb / (total_compress_time / 1000.0);
     double decompress_throughput = data_size_gb / (total_decompress_time / 1000.0);
@@ -298,14 +298,14 @@ CompressionInfo comp_LZ4(std::vector<double> oriData)
 
     };
 
-    // 数据校验
+    //translated comment
     if (memcmp(input_data, reconstructed, in_bytes) != 0) {
         std::cout << "Data mismatch!" << std::endl;
     } else {
         // std::cout << "\nData verification: PASSED" << std::endl;
     }
 
-    // 清理资源
+    //translated comment
     delete[] host_compressed_bytes;
     for (size_t i = 0; i < batch_size; ++i) {
         delete[] host_compressed_data[i];
@@ -313,7 +313,7 @@ CompressionInfo comp_LZ4(std::vector<double> oriData)
     delete[] host_compressed_data;
     delete[] reconstructed;
 
-    // 清理CUDA事件
+    //CUDA
     cudaEventDestroy(start_event);
     cudaEventDestroy(end_event);
     cudaEventDestroy(compress_h2d_start);
@@ -329,7 +329,7 @@ CompressionInfo comp_LZ4(std::vector<double> oriData)
     cudaEventDestroy(decompress_d2h_start);
     cudaEventDestroy(decompress_d2h_end);
 
-    // 清理CUDA资源
+    //CUDA
     cudaStreamSynchronize(stream);
     cudaFree(device_input_data);
     cudaFree(device_output_data);
@@ -352,9 +352,9 @@ CompressionInfo comp_LZ4(std::vector<double> oriData)
     return a;
 }
 
-// Google Test 测试用例
+//Google Test
 TEST(LZ4CompressorTest, CompressionDecompression) {
-    // 读取数据并测试压缩和解压
+    //translated comment
     // std::string dir_path = "../test/data/big"; 
     std::string dir_path = "../test/data/mew_tsbs"; 
     bool warmup = 0;
@@ -385,7 +385,7 @@ int main(int argc, char *argv[]) {
 
         std::string dir_path = argv[2];
 
-        // 检查目录是否存在
+        //translated comment
         if (!fs::exists(dir_path)) {
             std::cerr << "指定的数据目录不存在: " << dir_path << std::endl;
             return 1;

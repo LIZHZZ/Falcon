@@ -35,7 +35,7 @@ ManagerType create_gdeflate_manager(
 }
 
 CompressionInfo test_compression(const std::string& file_path) {
-    // 读取数据
+    //translated comment
     std::vector<double> oriData = read_data(file_path);
     size_t in_bytes = oriData.size() * sizeof(double);
     if (in_bytes == 0) {
@@ -43,7 +43,7 @@ CompressionInfo test_compression(const std::string& file_path) {
         return CompressionInfo{};
     }
 
-    // 创建CUDA流和事件
+    //CUDA
     cudaStream_t stream;
     cudaStreamCreate(&stream);
     
@@ -51,7 +51,7 @@ CompressionInfo test_compression(const std::string& file_path) {
     cudaEventCreate(&start_event);
     cudaEventCreate(&end_event);
 
-    // 分配设备内存
+    //translated comment
     uint8_t* device_input_data = nullptr;
     uint8_t* device_compressed_data = nullptr;
     uint8_t* device_decompressed_data = nullptr;
@@ -62,12 +62,12 @@ CompressionInfo test_compression(const std::string& file_path) {
         return CompressionInfo{};
     }
 
-    // 创建 GDeflate 管理器
+    //GDeflate
     const size_t chunk_size = 65536;
     nvcompBatchedGdeflateOpts_t format_opts = {0};
     auto manager = create_gdeflate_manager<nvcomp::GdeflateManager>(chunk_size, format_opts, stream);
 
-    // 配置压缩
+    //translated comment
     nvcomp::CompressionConfig comp_config = manager.configure_compression(in_bytes);
     err = cudaMalloc(&device_compressed_data, comp_config.max_compressed_buffer_size);
     if (err != cudaSuccess) {
@@ -76,9 +76,9 @@ CompressionInfo test_compression(const std::string& file_path) {
         return CompressionInfo{};
     }
 
-    // =========================== 压缩流程测量 ===========================
+    //translated comment
     
-    // 1. 测量H2D传输时间（压缩）
+    //translated comment
     auto start_h2d_compress = std::chrono::high_resolution_clock::now();
     cudaEventRecord(start_event, stream);
     cudaMemcpyAsync(device_input_data, oriData.data(), in_bytes, cudaMemcpyHostToDevice, stream);
@@ -90,7 +90,7 @@ CompressionInfo test_compression(const std::string& file_path) {
     cudaEventElapsedTime(&h2d_compress_time_ms, start_event, end_event);
     double h2d_compress_time = std::chrono::duration<double>(end_h2d_compress - start_h2d_compress).count();
 
-    // 2. 测量压缩核函数时间
+    //translated comment
     auto start_compress_kernel = std::chrono::high_resolution_clock::now();
     cudaEventRecord(start_event, stream);
     manager.compress(device_input_data, device_compressed_data, comp_config);
@@ -102,10 +102,10 @@ CompressionInfo test_compression(const std::string& file_path) {
     cudaEventElapsedTime(&compress_kernel_time_ms, start_event, end_event);
     double compress_kernel_time = std::chrono::duration<double>(end_compress_kernel - start_compress_kernel).count();
 
-    // 获取压缩后大小
+    //translated comment
     size_t comp_out_bytes = manager.get_compressed_output_size(device_compressed_data);
 
-    // 3. 测量D2H传输时间（压缩结果，可选）
+    //translated comment
     std::vector<uint8_t> compressed_host_data(comp_out_bytes);
     auto start_d2h_compress = std::chrono::high_resolution_clock::now();
     cudaEventRecord(start_event, stream);
@@ -118,12 +118,12 @@ CompressionInfo test_compression(const std::string& file_path) {
     cudaEventElapsedTime(&d2h_compress_time_ms, start_event, end_event);
     double d2h_compress_time = std::chrono::duration<double>(end_d2h_compress - start_d2h_compress).count();
 
-    // 压缩总时间
+    //translated comment
     double total_compress_time = h2d_compress_time + compress_kernel_time + d2h_compress_time;
 
-    // =========================== 解压流程测量 ===========================
+    //translated comment
     
-    // 配置解压
+    //translated comment
     nvcomp::DecompressionConfig decomp_config = manager.configure_decompression(device_compressed_data);
     err = cudaMalloc(&device_decompressed_data, decomp_config.decomp_data_size);
     if (err != cudaSuccess) {
@@ -133,7 +133,7 @@ CompressionInfo test_compression(const std::string& file_path) {
         return CompressionInfo{};
     }
     
-    // 1. 测量H2D传输时间（解压，如果需要从主机传输压缩数据）
+    //translated comment
     auto start_h2d_decompress = std::chrono::high_resolution_clock::now();
     cudaEventRecord(start_event, stream);
     cudaMemcpyAsync(device_compressed_data, compressed_host_data.data(), comp_out_bytes, cudaMemcpyHostToDevice, stream);
@@ -145,7 +145,7 @@ CompressionInfo test_compression(const std::string& file_path) {
     cudaEventElapsedTime(&h2d_decompress_time_ms, start_event, end_event);
     double h2d_decompress_time = std::chrono::duration<double>(end_h2d_decompress - start_h2d_decompress).count();
 
-    // 2. 测量解压核函数时间
+    //translated comment
     auto start_decompress_kernel = std::chrono::high_resolution_clock::now();
     cudaEventRecord(start_event, stream);
     manager.decompress(device_decompressed_data, device_compressed_data, decomp_config);
@@ -157,7 +157,7 @@ CompressionInfo test_compression(const std::string& file_path) {
     cudaEventElapsedTime(&decompress_kernel_time_ms, start_event, end_event);
     double decompress_kernel_time = std::chrono::duration<double>(end_decompress_kernel - start_decompress_kernel).count();
 
-    // 3. 测量D2H传输时间（解压结果）
+    //translated comment
     std::vector<double> decompressedData(oriData.size());
     auto start_d2h_decompress = std::chrono::high_resolution_clock::now();
     cudaEventRecord(start_event, stream);
@@ -170,10 +170,10 @@ CompressionInfo test_compression(const std::string& file_path) {
     cudaEventElapsedTime(&d2h_decompress_time_ms, start_event, end_event);
     double d2h_decompress_time = std::chrono::duration<double>(end_d2h_decompress - start_d2h_decompress).count();
 
-    // 解压总时间
+    //translated comment
     double total_decompress_time = h2d_decompress_time + decompress_kernel_time + d2h_decompress_time;
 
-    // =========================== 数据验证 ===========================
+    //translated comment
     const double tolerance = 1e-9;
     bool valid = true;
     for (size_t i = 0; i < oriData.size(); ++i) {
@@ -194,14 +194,14 @@ CompressionInfo test_compression(const std::string& file_path) {
         std::cout << "Decompression validated successfully." << std::endl;
     }
 
-    // =========================== 性能计算 ===========================
-    double compression_ratio = static_cast<double>(comp_out_bytes) / in_bytes; // 压缩率（小于1）
+    //translated comment
+    double compression_ratio = static_cast<double>(comp_out_bytes) / in_bytes; //translated comment
     double data_size_gb = in_bytes / (1024.0 * 1024.0 * 1024.0);
     double compress_throughput = data_size_gb / (total_compress_time );
     double decompress_throughput = data_size_gb / (total_decompress_time);
 
 
-    // =========================== 结果输出 ===========================
+    //translated comment
         CompressionInfo ans{
             in_bytes/1024.0/1024.0,
             static_cast<double>(comp_out_bytes) /1024.0/1024.0,
@@ -223,7 +223,7 @@ CompressionInfo test_compression(const std::string& file_path) {
 //     std::cout << "Data Size: " << data_size_gb << " GB" << std::endl;
 //     std::cout << "Compression Throughput: " << compress_throughput << " GB/s" << std::endl;
 //     std::cout << "Decompression Throughput: " << decompress_throughput << " GB/s" << std::endl;
-    // =========================== 清理资源 ===========================
+    //translated comment
     
     if (device_input_data) {
         err = cudaFree(device_input_data);
@@ -264,7 +264,7 @@ CompressionInfo test_compression(const std::string& file_path) {
 }
 
 CompressionInfo test_beta_compression(const std::string& file_path,int beta) {
-    // 读取数据
+    //translated comment
     std::vector<double> oriData = read_data(file_path,beta);
     size_t in_bytes = oriData.size() * sizeof(double);
     if (in_bytes == 0) {
@@ -272,7 +272,7 @@ CompressionInfo test_beta_compression(const std::string& file_path,int beta) {
         return CompressionInfo{};
     }
 
-    // 创建CUDA流和事件
+    //CUDA
     cudaStream_t stream;
     cudaStreamCreate(&stream);
     
@@ -280,7 +280,7 @@ CompressionInfo test_beta_compression(const std::string& file_path,int beta) {
     cudaEventCreate(&start_event);
     cudaEventCreate(&end_event);
 
-    // 分配设备内存
+    //translated comment
     uint8_t* device_input_data = nullptr;
     uint8_t* device_compressed_data = nullptr;
     uint8_t* device_decompressed_data = nullptr;
@@ -291,12 +291,12 @@ CompressionInfo test_beta_compression(const std::string& file_path,int beta) {
         return CompressionInfo{};
     }
 
-    // 创建 GDeflate 管理器
+    //GDeflate
     const size_t chunk_size = 65536;
     nvcompBatchedGdeflateOpts_t format_opts = {0};
     auto manager = create_gdeflate_manager<nvcomp::GdeflateManager>(chunk_size, format_opts, stream);
 
-    // 配置压缩
+    //translated comment
     nvcomp::CompressionConfig comp_config = manager.configure_compression(in_bytes);
     err = cudaMalloc(&device_compressed_data, comp_config.max_compressed_buffer_size);
     if (err != cudaSuccess) {
@@ -305,9 +305,9 @@ CompressionInfo test_beta_compression(const std::string& file_path,int beta) {
         return CompressionInfo{};
     }
 
-    // =========================== 压缩流程测量 ===========================
+    //translated comment
     
-    // 1. 测量H2D传输时间（压缩）
+    //translated comment
     auto start_h2d_compress = std::chrono::high_resolution_clock::now();
     cudaEventRecord(start_event, stream);
     cudaMemcpyAsync(device_input_data, oriData.data(), in_bytes, cudaMemcpyHostToDevice, stream);
@@ -319,7 +319,7 @@ CompressionInfo test_beta_compression(const std::string& file_path,int beta) {
     cudaEventElapsedTime(&h2d_compress_time_ms, start_event, end_event);
     double h2d_compress_time = std::chrono::duration<double>(end_h2d_compress - start_h2d_compress).count();
 
-    // 2. 测量压缩核函数时间
+    //translated comment
     auto start_compress_kernel = std::chrono::high_resolution_clock::now();
     cudaEventRecord(start_event, stream);
     manager.compress(device_input_data, device_compressed_data, comp_config);
@@ -331,10 +331,10 @@ CompressionInfo test_beta_compression(const std::string& file_path,int beta) {
     cudaEventElapsedTime(&compress_kernel_time_ms, start_event, end_event);
     double compress_kernel_time = std::chrono::duration<double>(end_compress_kernel - start_compress_kernel).count();
 
-    // 获取压缩后大小
+    //translated comment
     size_t comp_out_bytes = manager.get_compressed_output_size(device_compressed_data);
 
-    // 3. 测量D2H传输时间（压缩结果，可选）
+    //translated comment
     std::vector<uint8_t> compressed_host_data(comp_out_bytes);
     auto start_d2h_compress = std::chrono::high_resolution_clock::now();
     cudaEventRecord(start_event, stream);
@@ -347,12 +347,12 @@ CompressionInfo test_beta_compression(const std::string& file_path,int beta) {
     cudaEventElapsedTime(&d2h_compress_time_ms, start_event, end_event);
     double d2h_compress_time = std::chrono::duration<double>(end_d2h_compress - start_d2h_compress).count();
 
-    // 压缩总时间
+    //translated comment
     double total_compress_time = h2d_compress_time + compress_kernel_time + d2h_compress_time;
 
-    // =========================== 解压流程测量 ===========================
+    //translated comment
     
-    // 配置解压
+    //translated comment
     nvcomp::DecompressionConfig decomp_config = manager.configure_decompression(device_compressed_data);
     err = cudaMalloc(&device_decompressed_data, decomp_config.decomp_data_size);
     if (err != cudaSuccess) {
@@ -362,7 +362,7 @@ CompressionInfo test_beta_compression(const std::string& file_path,int beta) {
         return CompressionInfo{};
     }
     
-    // 1. 测量H2D传输时间（解压，如果需要从主机传输压缩数据）
+    //translated comment
     auto start_h2d_decompress = std::chrono::high_resolution_clock::now();
     cudaEventRecord(start_event, stream);
     cudaMemcpyAsync(device_compressed_data, compressed_host_data.data(), comp_out_bytes, cudaMemcpyHostToDevice, stream);
@@ -374,7 +374,7 @@ CompressionInfo test_beta_compression(const std::string& file_path,int beta) {
     cudaEventElapsedTime(&h2d_decompress_time_ms, start_event, end_event);
     double h2d_decompress_time = std::chrono::duration<double>(end_h2d_decompress - start_h2d_decompress).count();
 
-    // 2. 测量解压核函数时间
+    //translated comment
     auto start_decompress_kernel = std::chrono::high_resolution_clock::now();
     cudaEventRecord(start_event, stream);
     manager.decompress(device_decompressed_data, device_compressed_data, decomp_config);
@@ -386,7 +386,7 @@ CompressionInfo test_beta_compression(const std::string& file_path,int beta) {
     cudaEventElapsedTime(&decompress_kernel_time_ms, start_event, end_event);
     double decompress_kernel_time = std::chrono::duration<double>(end_decompress_kernel - start_decompress_kernel).count();
 
-    // 3. 测量D2H传输时间（解压结果）
+    //translated comment
     std::vector<double> decompressedData(oriData.size());
     auto start_d2h_decompress = std::chrono::high_resolution_clock::now();
     cudaEventRecord(start_event, stream);
@@ -399,10 +399,10 @@ CompressionInfo test_beta_compression(const std::string& file_path,int beta) {
     cudaEventElapsedTime(&d2h_decompress_time_ms, start_event, end_event);
     double d2h_decompress_time = std::chrono::duration<double>(end_d2h_decompress - start_d2h_decompress).count();
 
-    // 解压总时间
+    //translated comment
     double total_decompress_time = h2d_decompress_time + decompress_kernel_time + d2h_decompress_time;
 
-    // =========================== 数据验证 ===========================
+    //translated comment
     const double tolerance = 1e-9;
     bool valid = true;
     for (size_t i = 0; i < oriData.size(); ++i) {
@@ -423,14 +423,14 @@ CompressionInfo test_beta_compression(const std::string& file_path,int beta) {
         std::cout << "Decompression validated successfully." << std::endl;
     }
 
-    // =========================== 性能计算 ===========================
-    double compression_ratio = static_cast<double>(comp_out_bytes) / in_bytes; // 压缩率（小于1）
+    //translated comment
+    double compression_ratio = static_cast<double>(comp_out_bytes) / in_bytes; //translated comment
     double data_size_gb = in_bytes / (1024.0 * 1024.0 * 1024.0);
     double compress_throughput = data_size_gb / (total_compress_time );
     double decompress_throughput = data_size_gb / (total_decompress_time);
 
 
-    // =========================== 结果输出 ===========================
+    //translated comment
         CompressionInfo ans{
             in_bytes/1024.0/1024.0,
             static_cast<double>(comp_out_bytes) /1024.0/1024.0,
@@ -452,7 +452,7 @@ CompressionInfo test_beta_compression(const std::string& file_path,int beta) {
 //     std::cout << "Data Size: " << data_size_gb << " GB" << std::endl;
 //     std::cout << "Compression Throughput: " << compress_throughput << " GB/s" << std::endl;
 //     std::cout << "Decompression Throughput: " << decompress_throughput << " GB/s" << std::endl;
-    // =========================== 清理资源 ===========================
+    //translated comment
     
     if (device_input_data) {
         err = cudaFree(device_input_data);
@@ -492,7 +492,7 @@ CompressionInfo test_beta_compression(const std::string& file_path,int beta) {
     return ans;
 }
 
-// Google Test 测试用例
+//Google Test
 TEST(GDeflateCompressorTest, CompressionDecompression) {
     std::string dir_path = "../test/data/new_tsbs";
     if (!fs::exists(dir_path)) {
@@ -538,7 +538,7 @@ int main(int argc, char *argv[]) {
 
         std::string dir_path = argv[2];
 
-        // 检查目录是否存在
+        //translated comment
         if (!fs::exists(dir_path)) {
             std::cerr << "指定的数据目录不存在: " << dir_path << std::endl;
             return 1;

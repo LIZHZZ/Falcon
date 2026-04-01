@@ -98,11 +98,11 @@ static __device__ float get10iP_32(int i) {
     }
 }
 
-// 🔥 完全按照Java逻辑重写
+//🔥 Java
 static __device__ int getSignificantCount_32(float v, int sp, int lastBetaStar) {
     int i;
     
-    // 🔥 完全按照Java的条件分支
+    //🔥 Java
     if (lastBetaStar != 0x7FFFFFFF && lastBetaStar != 0) {
         // Java: i = Math.max(lastBetaStar - sp - 1, 1);
         i = lastBetaStar - sp - 1;
@@ -122,7 +122,7 @@ static __device__ int getSignificantCount_32(float v, int sp, int lastBetaStar) 
         temp = v * get10iP_32(i);
         tempLong = (long) temp;
         
-        // 安全检查防止无限循环
+        //translated comment
         if (i > 20) break;
     }
     
@@ -130,7 +130,7 @@ static __device__ int getSignificantCount_32(float v, int sp, int lastBetaStar) 
     if (temp / get10iP_32(i) != v) {
         return 8;
     } else {
-        // 🔥 Java的关键逻辑：去除尾部的0
+        //🔥 Java ： 0
         while (i > 0 && tempLong % 10 == 0) {
             i--;
             tempLong = tempLong / 10;

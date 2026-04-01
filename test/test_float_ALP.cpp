@@ -30,7 +30,7 @@ void ALP_ASSERT(T original_val, T decoded_val) {
 }
 } // namespace test
 
-// 文件压缩统计结构
+//translated comment
 struct FileCompressionStats {
     std::string file_path;
     double total_original_size = 0;
@@ -120,7 +120,7 @@ public:
         size_t positions_size = exceptions_count * sizeof(uint16_t);
         size_t metadata_size = sizeof(stt.right_for_base) + sizeof(stt.left_for_base) + 
                               sizeof(stt.right_bit_width) + sizeof(stt.left_bit_width) +
-                              sizeof(uint16_t); // 异常计数
+                              sizeof(uint16_t); //translated comment
         
         return right_compressed_size + left_compressed_size + exceptions_size + positions_size + metadata_size;
     }
@@ -133,7 +133,7 @@ public:
         size_t positions_size = exceptions_count * sizeof(uint16_t);
         size_t metadata_size = sizeof(int32_t) + sizeof(bit_width) + 
                               sizeof(stt.fac) + sizeof(stt.exp) + 
-                              sizeof(uint16_t); // 异常计数
+                              sizeof(uint16_t); //translated comment
         
         // printf("bit_width = %d \n", bit_width);
         
@@ -159,7 +159,7 @@ public:
         auto* base_arr = reinterpret_cast<ST*>(base_buf.get());
         auto* ffor_arr = reinterpret_cast<ST*>(ffor_buf.get());
 
-        // 复制数据到输入缓冲区
+        //translated comment
         for (size_t i = 0; i < batch_size; ++i) {
             input_arr[i] = static_cast<PT>(all_data[start_idx + i]);
             // printf("%f, ",all_data[start_idx + i]);
@@ -172,7 +172,7 @@ public:
         alp::encoder<PT>::init(input_arr, rowgroup_offset, batch_size, sample_arr, stt);
         auto init_end = std::chrono::high_resolution_clock::now();
 
-        // 统计方案使用情况
+        //translated comment
         file_stats.scheme_usage[stt.scheme]++;
 
         switch (stt.scheme) {
@@ -194,13 +194,13 @@ public:
 
             auto decode_end = std::chrono::high_resolution_clock::now();
 
-            // 验证结果
+            //translated comment
             for (size_t i = 0; i < batch_size; ++i) { 
                 test::ALP_ASSERT(input_arr[i], glue_arr[i]);
             }
 
-            // 计算压缩大小
-            uint16_t exceptions_count = exc_c_arr.get()[0]; // 假设异常计数存储在第一个位置
+            //translated comment
+            uint16_t exceptions_count = exc_c_arr.get()[0]; //translated comment
             size_t compressed_size = calculate_compressed_size_alp_rd(stt, batch_size, exceptions_count);
 
             file_stats.total_encode_time += (encode_end - encode_start);
@@ -225,13 +225,13 @@ public:
 
             auto decode_end = std::chrono::high_resolution_clock::now();
 
-            // 验证结果
+            //translated comment
             for (size_t i = 0; i < batch_size; ++i) {
                 test::ALP_ASSERT(input_arr[i], dec_dbl_arr[i]);
             }
 
-            // 计算压缩大小
-            uint16_t exceptions_count = exc_c_arr.get()[0]; // 假设异常计数存储在第一个位置
+            //translated comment
+            uint16_t exceptions_count = exc_c_arr.get()[0]; //translated comment
             size_t compressed_size = calculate_compressed_size_alp(stt, batch_size, bit_width, exceptions_count);
             file_stats.total_encode_time += (encode_end - encode_start);
             file_stats.total_decode_time += (decode_end - decode_start);
@@ -257,7 +257,7 @@ public:
 
     template <typename PT>
     void test_file_data(const std::string& file_path, FileCompressionStats& file_stats) {
-        // 一次性读取整个文件的所有数据
+        //translated comment
         std::vector<float> all_data = read_data_float(file_path, false);
         
         if (all_data.empty()) {
@@ -265,9 +265,9 @@ public:
             return;
         }
 
-        // std::cout << "文件总数据点: " << all_data.size() << std::endl;
+        //std::cout << " : " << all_data.size() << std::endl;
 
-        // 按批次处理数据
+        //translated comment
         size_t data_index = 0;
         size_t all_batch = 0;
         // for(int i=0;(i<10);i++)
@@ -299,7 +299,7 @@ public:
 std::string dir_path = "../test/data/tsbs_csv";
 
 TEST_F(alp_test, ratio) {
-    // 获取目录中的所有CSV文件
+    //CSV
     std::vector<std::string> csv_files;
     
     try {
@@ -313,13 +313,13 @@ TEST_F(alp_test, ratio) {
         FAIL() << "无法读取数据目录: " << dir_path;
     }
 
-    // ASSERT_FALSE(csv_files.empty()) << "在目录 " << dir_path << " 中没有找到CSV文件!";
+    //ASSERT_FALSE(csv_files.empty()) << " " << dir_path << " CSV !";
     
-    // std::cout << "找到 " << csv_files.size() << " 个CSV文件" << std::endl;
+    //std::cout << " " << csv_files.size() << " CSV " << std::endl;
     
     std::vector<FileCompressionStats> all_file_stats;
     
-    // 按文件处理
+    //translated comment
     for (const auto& file_path : csv_files) {
         std::cout << "\nProcessing file: " << file_path << std::endl;
 
@@ -328,7 +328,7 @@ TEST_F(alp_test, ratio) {
         file_stats.file_path = file_path;
         
         try {
-            // 进行3次测试取平均值
+            //translated comment
             FileCompressionStats total_stats;
             total_stats.file_path = file_path;
             
@@ -337,12 +337,12 @@ TEST_F(alp_test, ratio) {
                 run_stats.file_path = file_path;
 
                 
-                // std::cout << "第 " << (run + 1) << " 次运行..." << std::endl;
+                //std::cout << " " << (run + 1) << " ..." << std::endl;
                 test_file_data<float>(file_path, run_stats);
                 
                 size_t total_compressed_size = run_stats.total_compressed_size;
                 printf("file_stats : %d \n", total_compressed_size);
-                // 累加统计信息
+                //translated comment
                 total_stats.total_original_size += run_stats.total_original_size;
                 total_stats.total_compressed_size += run_stats.total_compressed_size;
                 total_stats.total_encode_time += run_stats.total_encode_time;
@@ -350,13 +350,13 @@ TEST_F(alp_test, ratio) {
                 total_stats.total_data_points += run_stats.total_data_points;
                 total_stats.batches_processed += run_stats.batches_processed;
                 
-                // 合并方案使用统计
+                //translated comment
                 for (const auto& [scheme, count] : run_stats.scheme_usage) {
                     total_stats.scheme_usage[scheme] += count;
                 }
             }
             
-            // 计算平均值
+            //translated comment
             file_stats.total_original_size = total_stats.total_original_size / 3.0;
             file_stats.total_compressed_size = total_stats.total_compressed_size / 3.0;
             file_stats.total_encode_time = total_stats.total_encode_time / 3.0;
@@ -364,12 +364,12 @@ TEST_F(alp_test, ratio) {
             file_stats.total_data_points = total_stats.total_data_points / 3;
             file_stats.batches_processed = total_stats.batches_processed / 3;
             
-            // 方案使用统计取平均
+            //translated comment
             for (const auto& [scheme, count] : total_stats.scheme_usage) {
                 file_stats.scheme_usage[scheme] = count / 3;
             }
             
-            // 输出统计结果
+            //translated comment
             CompressionInfo compression_info{
                 file_stats.total_original_size / (1024.0 * 1024.0),
                 file_stats.total_compressed_size / (1024.0 * 1024.0),
@@ -384,13 +384,13 @@ TEST_F(alp_test, ratio) {
             
             compression_info.print();
             
-            // 输出方案使用统计
-            // std::cout << "压缩方案使用统计:" << std::endl;
+            //translated comment
+            //std::cout << " :" << std::endl;
             // for (const auto& [scheme, count] : file_stats.scheme_usage) {
-            //     std::cout << "  方案 " << static_cast<int>(scheme) << ": " << count << " 次" << std::endl;
+            //std::cout << " " << static_cast<int>(scheme) << ": " << count << " " << std::endl;
             // }
             
-            // std::cout << "处理批次数: " << file_stats.batches_processed << std::endl;
+            //std::cout << " : " << file_stats.batches_processed << std::endl;
             // std::cout << "=============================================" << std::endl;
             
             all_file_stats.push_back(file_stats);

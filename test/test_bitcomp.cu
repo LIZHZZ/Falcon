@@ -10,7 +10,7 @@
 #include <cuda_runtime.h>
 #include <filesystem>
 
-// nvcomp bitcomp 头文件
+//nvcomp bitcomp
 #include "nvcomp/bitcomp.h"  // C API for constants
 #include "nvcomp/bitcomp.hpp"
 #include "nvcomp.hpp"
@@ -18,7 +18,7 @@
 
 namespace fs = std::filesystem;
 
-// 错误检查宏
+//translated comment
 #define CHECK_CUDA(call) \
     do { \
         cudaError_t err = call; \
@@ -43,7 +43,7 @@ void comp_Bitcomp(std::vector<double> oriData,CompressionInfo &a) ;
 CompressionInfo  test_compression(const std::string& file_path);
 
 CompressionInfo  test_compression(const std::string& file_path) {
-    // 读取数据
+    //translated comment
     CompressionInfo tmp;
     std::vector<double> oriData = read_data(file_path);
     comp_Bitcomp(oriData,tmp);
@@ -51,7 +51,7 @@ CompressionInfo  test_compression(const std::string& file_path) {
 }
 
 CompressionInfo  test_beta_compression(const std::string& file_path,int beta) {
-    // 读取数据
+    //translated comment
     CompressionInfo tmp;
     std::vector<double> oriData = read_data(file_path,beta);
     comp_Bitcomp(oriData,tmp);
@@ -61,18 +61,18 @@ CompressionInfo  test_beta_compression(const std::string& file_path,int beta) {
 void comp_Bitcomp(std::vector<double> oriData,CompressionInfo &a) {
     std::cout << "Testing nvcomp bitcomp compression (chunked)..." << std::endl;
     
-    // 转换为字节数据
+    //translated comment
     const size_t data_size = oriData.size() * sizeof(double);
     const uint8_t* input_bytes = reinterpret_cast<const uint8_t*>(oriData.data());
     
     std::cout << "Input size: " << data_size << " bytes (" << oriData.size() << " doubles)" << std::endl;
     
-    // 数据预检查 - 检查数据范围和特征
+    //translated comment
     double min_val = *std::min_element(oriData.begin(), oriData.end());
     double max_val = *std::max_element(oriData.begin(), oriData.end());
     std::cout << "Data range: [" << min_val << ", " << max_val << "]" << std::endl;
     
-    // 检查是否有无穷大或NaN值
+    //NaN
     bool has_invalid = false;
     for (const auto& val : oriData) {
         if (!std::isfinite(val)) {
@@ -85,14 +85,14 @@ void comp_Bitcomp(std::vector<double> oriData,CompressionInfo &a) {
         std::cout << "⚠️ 数据包含无穷大或NaN值，bitcomp可能不支持" << std::endl;
     }
     
-    // 分块参数
+    //translated comment
     const size_t CHUNK_SIZE = 16 * 1024 * 1024; // 32MB
     size_t num_chunks = (data_size + CHUNK_SIZE - 1) / CHUNK_SIZE;
     std::vector<const void*> h_input_ptrs(num_chunks);
     std::vector<size_t> h_input_sizes(num_chunks);
     std::vector<uint8_t*> d_chunk_inputs(num_chunks);
     
-    // 分配每个chunk的device内存并拷贝
+    //chunk device
     for (size_t i = 0; i < num_chunks; ++i) {
         size_t offset = i * CHUNK_SIZE;
         size_t chunk_bytes = std::min(CHUNK_SIZE, data_size - offset);
@@ -104,12 +104,12 @@ void comp_Bitcomp(std::vector<double> oriData,CompressionInfo &a) {
         h_input_sizes[i] = chunk_bytes;
     }
     
-    // 计时变量
+    //translated comment
     auto start_total = std::chrono::high_resolution_clock::now();
     auto start_kernel = start_total, end_kernel = start_total;
     
-    // 1. 批量压缩
-    // 1.1 分配device指针数组
+    //translated comment
+    //1.1 device
     const void** d_input_ptrs = nullptr;
     size_t* d_input_sizes = nullptr;
     CHECK_CUDA(cudaMalloc(&d_input_ptrs, num_chunks * sizeof(void*)));
@@ -117,7 +117,7 @@ void comp_Bitcomp(std::vector<double> oriData,CompressionInfo &a) {
     CHECK_CUDA(cudaMemcpy(d_input_ptrs, h_input_ptrs.data(), num_chunks * sizeof(void*), cudaMemcpyHostToDevice));
     CHECK_CUDA(cudaMemcpy(d_input_sizes, h_input_sizes.data(), num_chunks * sizeof(size_t), cudaMemcpyHostToDevice));
     
-    // 1.2 获取压缩所需的临时内存和最大输出大小
+    //translated comment
     size_t temp_bytes = 0;
     CHECK_NVCOMP(nvcompBatchedBitcompCompressGetTempSize(
         num_chunks, CHUNK_SIZE, nvcompBatchedBitcompDefaultOpts, &temp_bytes));
@@ -125,7 +125,7 @@ void comp_Bitcomp(std::vector<double> oriData,CompressionInfo &a) {
     CHECK_NVCOMP(nvcompBatchedBitcompCompressGetMaxOutputChunkSize(
         CHUNK_SIZE, nvcompBatchedBitcompDefaultOpts, &max_output_chunk_size));
     
-    // 1.3 分配输出内存
+    //translated comment
     std::vector<uint8_t*> d_compressed_chunks(num_chunks);
     std::vector<void*> h_compressed_ptrs(num_chunks);
     std::vector<size_t> h_compressed_sizes(num_chunks, max_output_chunk_size);
@@ -142,11 +142,11 @@ void comp_Bitcomp(std::vector<double> oriData,CompressionInfo &a) {
     CHECK_CUDA(cudaMemcpy(d_compressed_ptrs, h_compressed_ptrs.data(), num_chunks * sizeof(void*), cudaMemcpyHostToDevice));
     CHECK_CUDA(cudaMemcpy(d_compressed_sizes, h_compressed_sizes.data(), num_chunks * sizeof(size_t), cudaMemcpyHostToDevice));
     
-    // 1.4 分配临时内存
+    //translated comment
     void* d_temp = nullptr;
     if (temp_bytes > 0) CHECK_CUDA(cudaMalloc(&d_temp, temp_bytes));
     
-    // 1.5 执行批量压缩
+    //translated comment
     start_kernel = std::chrono::high_resolution_clock::now();
     nvcompStatus_t status = nvcompBatchedBitcompCompressAsync(
         d_input_ptrs, d_input_sizes, CHUNK_SIZE, num_chunks,
@@ -156,7 +156,7 @@ void comp_Bitcomp(std::vector<double> oriData,CompressionInfo &a) {
     end_kernel = std::chrono::high_resolution_clock::now();
     if (status != nvcompSuccess) {
         std::cout << "❌ bitcomp批量压缩失败，状态码: " << status << std::endl;
-        // 清理内存
+        //translated comment
         if (d_temp) cudaFree(d_temp);
         if (d_input_ptrs) cudaFree(d_input_ptrs);
         if (d_input_sizes) cudaFree(d_input_sizes);
@@ -167,23 +167,23 @@ void comp_Bitcomp(std::vector<double> oriData,CompressionInfo &a) {
         for (auto p : d_compressed_chunks) cudaFree(p);
         return;
     }
-    // 1.6 获取实际压缩大小
+    //translated comment
     std::vector<size_t> actual_compressed_sizes(num_chunks);
     CHECK_CUDA(cudaMemcpy(actual_compressed_sizes.data(), d_actual_compressed_sizes, num_chunks * sizeof(size_t), cudaMemcpyDeviceToHost));
-    // 1.7 拷贝所有压缩数据回host
+    //1.7 host
     std::vector<std::vector<uint8_t>> compressed_datas(num_chunks);
     for (size_t i = 0; i < num_chunks; ++i) {
         compressed_datas[i].resize(actual_compressed_sizes[i]);
         CHECK_CUDA(cudaMemcpy(compressed_datas[i].data(), d_compressed_chunks[i], actual_compressed_sizes[i], cudaMemcpyDeviceToHost));
     }
-    // 1.8 统计压缩信息
+    //translated comment
     size_t total_compressed_bytes = 0;
     for (auto sz : actual_compressed_sizes) total_compressed_bytes += sz;
     auto end_total_compress = std::chrono::high_resolution_clock::now();
     double compression_kernel_time = std::chrono::duration<double, std::milli>(end_kernel - start_kernel).count();
     double compression_total_time = std::chrono::duration<double, std::milli>(end_total_compress - start_total).count();
-    // ==================== 解压缩流程 ====================
-    // 2.1 将压缩数据重新拷贝到device
+    //translated comment
+    //2.1 device
     auto start_total_decompress = std::chrono::high_resolution_clock::now();
     std::vector<uint8_t*> d_decompressed_chunks(num_chunks);
     std::vector<void*> h_decompressed_ptrs(num_chunks);
@@ -195,7 +195,7 @@ void comp_Bitcomp(std::vector<double> oriData,CompressionInfo &a) {
     std::vector<void*> h_compressed_ptrs_reload(num_chunks);
     std::vector<size_t> h_compressed_sizes_reload(num_chunks);
     for (size_t i = 0; i < num_chunks; ++i) {
-        // 压缩数据重新分配到device
+        //device
         uint8_t* d_cmp = nullptr;
         CHECK_CUDA(cudaMalloc(&d_cmp, actual_compressed_sizes[i]));
         CHECK_CUDA(cudaMemcpy(d_cmp, compressed_datas[i].data(), actual_compressed_sizes[i], cudaMemcpyHostToDevice));
@@ -203,17 +203,17 @@ void comp_Bitcomp(std::vector<double> oriData,CompressionInfo &a) {
         h_compressed_ptrs_reload[i] = d_cmp;
         h_compressed_sizes_reload[i] = actual_compressed_sizes[i];
     }
-    // 2.2 分配device指针数组
+    //2.2 device
     void** d_compressed_ptrs_reload = nullptr;
     size_t* d_compressed_sizes_reload = nullptr;
     CHECK_CUDA(cudaMalloc(&d_compressed_ptrs_reload, num_chunks * sizeof(void*)));
     CHECK_CUDA(cudaMalloc(&d_compressed_sizes_reload, num_chunks * sizeof(size_t)));
     CHECK_CUDA(cudaMemcpy(d_compressed_ptrs_reload, h_compressed_ptrs_reload.data(), num_chunks * sizeof(void*), cudaMemcpyHostToDevice));
     CHECK_CUDA(cudaMemcpy(d_compressed_sizes_reload, h_compressed_sizes_reload.data(), num_chunks * sizeof(size_t), cudaMemcpyHostToDevice));
-    // 2.3 获取解压所需的临时内存
+    //translated comment
     size_t decomp_temp_bytes = 0;
     CHECK_NVCOMP(nvcompBatchedBitcompDecompressGetTempSize(num_chunks, CHUNK_SIZE, &decomp_temp_bytes));
-    // 2.4 获取原始数据大小
+    //translated comment
     size_t* d_decomp_sizes = nullptr;
     CHECK_CUDA(cudaMalloc(&d_decomp_sizes, num_chunks * sizeof(size_t)));
     CHECK_NVCOMP(nvcompBatchedBitcompGetDecompressSizeAsync(
@@ -221,7 +221,7 @@ void comp_Bitcomp(std::vector<double> oriData,CompressionInfo &a) {
     CHECK_CUDA(cudaStreamSynchronize(0));
     std::vector<size_t> decomp_sizes(num_chunks);
     CHECK_CUDA(cudaMemcpy(decomp_sizes.data(), d_decomp_sizes, num_chunks * sizeof(size_t), cudaMemcpyDeviceToHost));
-    // 2.5 分配解压输出内存
+    //translated comment
     for (size_t i = 0; i < num_chunks; ++i) {
         CHECK_CUDA(cudaMalloc(&d_decompressed_chunks[i], decomp_sizes[i]));
         h_decompressed_ptrs[i] = d_decompressed_chunks[i];
@@ -230,20 +230,20 @@ void comp_Bitcomp(std::vector<double> oriData,CompressionInfo &a) {
     void** d_decompressed_ptrs = nullptr;
     CHECK_CUDA(cudaMalloc(&d_decompressed_ptrs, num_chunks * sizeof(void*)));
     CHECK_CUDA(cudaMemcpy(d_decompressed_ptrs, h_decompressed_ptrs.data(), num_chunks * sizeof(void*), cudaMemcpyHostToDevice));
-    // 2.6 分配状态数组
+    //translated comment
     nvcompStatus_t* d_statuses = nullptr;
     CHECK_CUDA(cudaMalloc(&d_statuses, num_chunks * sizeof(nvcompStatus_t)));
-    // 2.7 分配临时内存
+    //translated comment
     void* d_decomp_temp = nullptr;
     if (decomp_temp_bytes > 0) CHECK_CUDA(cudaMalloc(&d_decomp_temp, decomp_temp_bytes));
-    // 2.8 执行批量解压
+    //translated comment
     start_kernel = std::chrono::high_resolution_clock::now();
     CHECK_NVCOMP(nvcompBatchedBitcompDecompressAsync(
         d_compressed_ptrs_reload, d_compressed_sizes_reload, d_decomp_sizes, d_decomp_sizes, num_chunks,
         d_decomp_temp, decomp_temp_bytes, d_decompressed_ptrs, d_statuses, 0));
     CHECK_CUDA(cudaStreamSynchronize(0));
     end_kernel = std::chrono::high_resolution_clock::now();
-    // 2.9 检查解压状态
+    //translated comment
     std::vector<nvcompStatus_t> statuses(num_chunks);
     CHECK_CUDA(cudaMemcpy(statuses.data(), d_statuses, num_chunks * sizeof(nvcompStatus_t), cudaMemcpyDeviceToHost));
     bool all_success = true;
@@ -253,7 +253,7 @@ void comp_Bitcomp(std::vector<double> oriData,CompressionInfo &a) {
             all_success = false;
         }
     }
-    // 2.10 D2H 解压缩数据传输
+    //translated comment
     std::vector<uint8_t> output_data(data_size);
     size_t offset = 0;
     for (size_t i = 0; i < num_chunks; ++i) {
@@ -263,8 +263,8 @@ void comp_Bitcomp(std::vector<double> oriData,CompressionInfo &a) {
     auto end_total_decompress = std::chrono::high_resolution_clock::now();
     double decompression_kernel_time = std::chrono::duration<double, std::milli>(end_kernel - start_kernel).count();
     double decompression_total_time = std::chrono::duration<double, std::milli>(end_total_decompress - start_total_decompress).count();
-    // std::cout << "=== 压缩结果 ===" << std::endl;
-    // std::cout << "压缩后总大小: " << total_compressed_bytes << " bytes" << std::endl;
+    //std::cout << "=== ===" << std::endl;
+    //std::cout << " : " << total_compressed_bytes << " bytes" << std::endl;
     double compression_total_throughput_gbps = (data_size / (1024.0 * 1024.0 * 1024.0)) / (compression_total_time / 1000.0);
     double decompression_total_throughput_gbps = (data_size / (1024.0 * 1024.0 * 1024.0)) / (decompression_total_time / 1000.0);
     a= CompressionInfo {
@@ -278,13 +278,13 @@ void comp_Bitcomp(std::vector<double> oriData,CompressionInfo &a) {
         decompression_total_time,
         decompression_total_throughput_gbps
     };
-    // std::cout << "压缩率: " << std::fixed << std::setprecision(4) << (double)total_compressed_bytes / data_size << std::endl;
-    // std::cout << "压缩核函数时间: "<< std::fixed << std::setprecision(4)  << compression_kernel_time << " ms" << std::endl;
-    // std::cout << "压缩全流程时间: " << std::fixed << std::setprecision(4) << compression_total_time << " ms" << std::endl;
-    // std::cout << "解压缩核函数时间: " << std::fixed << std::setprecision(4) << decompression_kernel_time << " ms" << std::endl;
-    // std::cout << "解压全流程时间: " << std::fixed << std::setprecision(4) << decompression_total_time << " ms" << std::endl;
-    // std::cout << "解压全流程吞吐量: " << std::fixed << std::setprecision(4) << decompression_total_throughput_gbps << " GB/s" << std::endl;
-    // 2.11 验证数据
+    //std::cout << " : " << std::fixed << std::setprecision(4) << (double)total_compressed_bytes / data_size << std::endl;
+    //std::cout << " : "<< std::fixed << std::setprecision(4) << compression_kernel_time << " ms" << std::endl;
+    //std::cout << " : " << std::fixed << std::setprecision(4) << compression_total_time << " ms" << std::endl;
+    //std::cout << " : " << std::fixed << std::setprecision(4) << decompression_kernel_time << " ms" << std::endl;
+    //std::cout << " : " << std::fixed << std::setprecision(4) << decompression_total_time << " ms" << std::endl;
+    //std::cout << " : " << std::fixed << std::setprecision(4) << decompression_total_throughput_gbps << " GB/s" << std::endl;
+    //translated comment
     bool success = (offset == data_size) && (memcmp(input_bytes, output_data.data(), data_size) == 0);
     if (success && all_success) {
         std::cout << "✓ 压缩和解压缩验证成功!" << std::endl;
@@ -292,7 +292,7 @@ void comp_Bitcomp(std::vector<double> oriData,CompressionInfo &a) {
         std::cout << "❌ 数据验证失败!" << std::endl;
         std::cout << "   原始大小: " << data_size << ", 解压后大小: " << offset << std::endl;
     }
-    // 清理GPU内存
+    //GPU
     if (d_temp) cudaFree(d_temp);
     if (d_decomp_temp) cudaFree(d_decomp_temp);
     if (d_input_ptrs) cudaFree(d_input_ptrs);
@@ -312,9 +312,9 @@ void comp_Bitcomp(std::vector<double> oriData,CompressionInfo &a) {
     // return a;
 }
 
-// Google Test 测试用例
+//Google Test
 TEST(BitcompCompressorTest, CompressionDecompression) {
-    // 读取数据并测试压缩和解压
+    //translated comment
     std::string dir_path = "../test/data/source"; 
     for (const auto& entry : fs::directory_iterator(dir_path)) {
         if (entry.is_regular_file()) {
@@ -335,7 +335,7 @@ int main(int argc, char *argv[]) {
 
         std::string dir_path = argv[2];
 
-        // 检查目录是否存在
+        //translated comment
         if (!fs::exists(dir_path)) {
             std::cerr << "指定的数据目录不存在: " << dir_path << std::endl;
             return 1;

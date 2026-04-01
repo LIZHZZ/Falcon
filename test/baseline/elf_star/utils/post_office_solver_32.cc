@@ -4,20 +4,20 @@
 
 Array<int>
 PostOfficeSolver32::InitRoundAndRepresentation(Array<int> &distribution, Array<int> &representation, Array<int> &round) {
-  // 当前及前面的非零个数（包括当前）
+  //translated comment
   Array<int> pre_non_zeros_count(distribution.length());
-  // 当前后面的非零个数（不包括当前）
+  //translated comment
   Array<int> post_non_zeros_count(distribution.length());
   Array<int> total_count_and_non_zeros_counts = CalTotalCountAndNonZerosCounts(distribution, pre_non_zeros_count,
                                                                                post_non_zeros_count);
 
-  int max_z = std::min(kPositionLength2Bits[total_count_and_non_zeros_counts[1]], 4);  // 最多用5个bit来表示
+  int max_z = std::min(kPositionLength2Bits[total_count_and_non_zeros_counts[1]], 4);  //5 bit
   int total_cost = std::numeric_limits<int>::max();
   Array<int> positions = {};
 
   int present_cost;
   for (int z = 0; z <= max_z && (present_cost = total_count_and_non_zeros_counts[0] * z) < total_cost; ++z) {
-    // 邮局的总数量
+    //translated comment
     int num = PostOfficeSolver32::kPow2z[z];
     PostOfficeResult por = PostOfficeSolver32::BuildPostOffice(distribution, num,
                                                              total_count_and_non_zeros_counts[1],
@@ -56,7 +56,7 @@ PostOfficeSolver32::CalTotalCountAndNonZerosCounts(Array<int> &arr, Array<int> &
                                                  Array<int> &out_post_non_zeros_count) {
   int non_zeros_count = arr.length();
   int total_count = arr[0];
-  out_pre_non_zeros_count[0] = 1;            // 第一个视为非零
+  out_pre_non_zeros_count[0] = 1;            //translated comment
   for (int i = 1; i < arr.length(); ++i) {
     total_count += arr[i];
     // Bad but useful code
@@ -83,16 +83,16 @@ PostOfficeResult PostOfficeSolver32::BuildPostOffice(Array<int> &arr, int num, i
   num = std::min(num, non_zeros_count);
 
   /**
-   * 状态矩阵。d[i][j]表示，只考虑前i个居民点，且第i个位置是第j个邮局的总距离，i >= j
-   * 下标从0开始。注意，并非是所有居民点的总距离，因为没有考虑第j个邮局之后的居民点的距离
+   *。d[i][j] ， i ， i j ，i >= j
+   *translated comment
    */
   int dp[arr.length()][num];
-  // 对应于dp[i][j]，表示让dp[i][j]最小时，第j-1个邮局所在的位置信息
+  //dp[i][j]， dp[i][j] ， j-1
   int pre[arr.length()][num];
 
-  // 第0个位置是第0个邮局，此时状态为0
+  //translated comment
   dp[0][0] = 0;
-  // 让dp[0][0]最小时，第-1个邮局所在的位置信息为-1
+  //translated comment
   pre[0][0] = -1;
 
   for (int i = 1; i < arr.length(); ++i) {
@@ -101,7 +101,7 @@ PostOfficeResult PostOfficeSolver32::BuildPostOffice(Array<int> &arr, int num, i
     }
     for (int j = std::max(1, num + i - arr.length()); j <= i && j < num; ++j) {
       // arr.length - i < num - j，
-      // 表示i后面的居民数（arr.length - i）不足以构建剩下的num - j个邮局
+      //i （arr.length - i） num - j
       if (i > 1 && j == 1) {
         dp[i][j] = 0;
         for (int k = 1; k < i; k++) {
@@ -126,7 +126,7 @@ PostOfficeResult PostOfficeSolver32::BuildPostOffice(Array<int> &arr, int num, i
             app_cost = sum;
             pre_k = k;
             if (sum == 0) {
-              // 找到其中一个0，提前终止
+              //translated comment
               break;
             }
           }

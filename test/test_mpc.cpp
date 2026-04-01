@@ -4,16 +4,16 @@
 #include <cmath>
 #include <iostream>
 #include <random>
-#include <type_traits>  // 新增类型特征头文件
+#include <type_traits>  //translated comment
 #include "MPC_12.h"
 
-// 测试配置参数
-constexpr size_t N = 1024 * 1024;  // 1M数据点
-constexpr int DIM = 1;            // 数据维度
-constexpr int TEST_RUNS = 5;      // 测试轮次
+//translated comment
+constexpr size_t N = 1024 * 1024;  //translated comment
+constexpr int DIM = 1;            //translated comment
+constexpr int TEST_RUNS = 5;      //translated comment
 
 
-// 类型特征定义
+//translated comment
 template<typename T>
 struct MPC_Traits;
 
@@ -36,14 +36,14 @@ struct MPC_Traits<double> {
 };
 
 
-// 生成测试数据
+//translated comment
 template<typename T>
 std::vector<T> generate_data(size_t size) {
     std::vector<T> data(size);
     std::mt19937 gen(42);
     std::uniform_real_distribution<T> dist(-100.0, 100.0);
     
-    // 混合数据模式：50%随机数 + 50%周期信号
+    //translated comment
     for (size_t i = 0; i < size; ++i) {
         if (i % 2 == 0) {
             data[i] = dist(gen);
@@ -54,34 +54,34 @@ std::vector<T> generate_data(size_t size) {
     return data;
 }
 
-// 核心测试模板
+//translated comment
 template<typename T>
 void test_mpc_compression() {
     using Traits = MPC_Traits<T>;
     
-    // 添加性能统计变量
+    //translated comment
     double total_compress_time = 0.0;
     double total_decompress_time = 0.0;
     size_t final_compressed_size = 0;
 
     auto original = generate_data<T>(N);
     
-    // 准备缓冲区
+    //translated comment
     const int input_bytes = N * sizeof(T);
     const int max_compressed_bytes = Traits::CompressBound(input_bytes);
     std::vector<typename Traits::CompressedType> compressed(max_compressed_bytes / sizeof(typename Traits::CompressedType));
 
-    // 预热运行
+    //translated comment
     uint64_t kernel_time = 0;
     Traits::Compress(compressed.data(), 
                     reinterpret_cast<const typename Traits::CompressedType*>(original.data()),
                     input_bytes, DIM, &kernel_time);
 
-    // 性能测试循环
+    //translated comment
     for (int i = 0; i < TEST_RUNS; ++i) {
-        // 修复点1：使用正确的压缩函数调用
+        //translated comment
         auto start = std::chrono::high_resolution_clock::now();
-        int cmp_size = Traits::Compress(  // 使用 Traits::Compress
+        int cmp_size = Traits::Compress(  //Traits::Compress
             compressed.data(),
             reinterpret_cast<const typename Traits::CompressedType*>(original.data()),
             input_bytes,
@@ -91,7 +91,7 @@ void test_mpc_compression() {
         auto end = std::chrono::high_resolution_clock::now();
         total_compress_time += std::chrono::duration<double>(end - start).count();
         
-        // 解压
+        //translated comment
         std::vector<T> decompressed(N);
         int dec_size = Traits::DecompressedSize(compressed.data(), cmp_size);
         
@@ -105,7 +105,7 @@ void test_mpc_compression() {
         end = std::chrono::high_resolution_clock::now();
         total_decompress_time += std::chrono::duration<double>(end - start).count();
 
-        // 验证
+        //translated comment
         ASSERT_EQ(dec_size, input_bytes) << "解压大小不匹配";
         for (size_t j = 0; j < N; ++j) {
             ASSERT_NEAR(original[j], decompressed[j], 1e-6) 
@@ -115,7 +115,7 @@ void test_mpc_compression() {
         final_compressed_size = cmp_size;
     }
 
-    // 输出报告
+    //translated comment
     const double avg_compress_time = total_compress_time / TEST_RUNS;
     const double avg_decompress_time = total_decompress_time / TEST_RUNS;
     const double compression_ratio = (final_compressed_size * 1.0) / input_bytes;
@@ -129,7 +129,7 @@ void test_mpc_compression() {
               << "\nGPU内核时间: " << kernel_time << " μs\n";
 }
 
-// 测试用例
+//translated comment
 TEST(MPCCompressionTest, FloatCompression) {
     test_mpc_compression<float>();
 }
@@ -137,7 +137,7 @@ TEST(MPCCompressionTest, FloatCompression) {
 TEST(MPCCompressionTest, DoubleCompression) {
     test_mpc_compression<double>();
 }
-// 边界测试
+//translated comment
 TEST(MPCCompressionTest, ExtremeValues) {
     std::vector<double> data = {
         std::numeric_limits<double>::max(),
@@ -145,7 +145,7 @@ TEST(MPCCompressionTest, ExtremeValues) {
         std::numeric_limits<double>::epsilon()
     };
 
-    // 压缩
+    //translated comment
     long compressed[1024];
     uint64_t kernel_time;
     int cmp_size = MPC_double_compressMemory(
@@ -156,7 +156,7 @@ TEST(MPCCompressionTest, ExtremeValues) {
         &kernel_time
     );
 
-    // 解压
+    //translated comment
     std::vector<double> decompressed(data.size());
     MPC_double_decompressMemory(
         reinterpret_cast<long*>(decompressed.data()),
@@ -165,7 +165,7 @@ TEST(MPCCompressionTest, ExtremeValues) {
         &kernel_time
     );
 
-    // 验证
+    //translated comment
     for (size_t i = 0; i < data.size(); ++i) {
         ASSERT_DOUBLE_EQ(data[i], decompressed[i]);
     }
